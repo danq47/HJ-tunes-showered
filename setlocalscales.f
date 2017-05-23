@@ -8,19 +8,25 @@ c coupling rescaling, for Born (imode=1) and NLO corrections (imode=2)
       include 'pwhg_st.h'
       include 'pwhg_flg.h'
       include 'pwhg_math.h'
+      include 'minlo_jve.h'
       integer iuborn,imode
       real * 8 rescfac,expsudakov,expsud,sudakov,pwhg_alphas
-      real * 8 ptb2,mb2,mu2,alphas,b0,optb2,omb2,orescfac,omuf2
+      real * 8 ptb2,mb2,mu2,alphas,b0,optb2,optj2,omb2,orescfac,omuf2
       real * 8 pb(0:3)
+      real * 8 ptsq, ptj2, oknp(0:3,3:5)  
       integer oimode,i,flav
-      save optb2,omb2,orescfac,oimode,omuf2
+      logical olreal
+      save optb2,omb2,orescfac,oimode,omuf2,optj2,oknp,olreal
       data optb2/-1d0/
+      data optj2/-1d0/
       logical ini,bmass_in_minlo_flg
       data ini/.true./
       save ini
       real * 8 powheginput,factsc2min,frensc2min,as,y,b1,tmp,bfact
+      real *8 d4B, d5B, d45, dy,deta,dphi,dr
       save factsc2min,frensc2min,b0,b1,bmass_in_minlo_flg
       integer imax
+C      logical minlo_jve 
 c      real * 8 rescfac1,rescfac2
 c      common /crescfac/rescfac1,rescfac2
       
@@ -36,9 +42,37 @@ c         call getq2min(1,tmp)
 c         write(*,*) ' ***** minimum Q of pdf:',sqrt(tmp)
          b0=(33d0-2d0*st_nlight)/(12*pi)
          b1=(153d0-19d0*st_nlight)/(24*pi**2)
+         minlo_jve = powheginput("#minlo_jve").eq.1
+         if (minlo_jve) minlo_deltaR = powheginput("minlo_deltaR")
+         oknp = -1d0 
          ini = .false.
       endif
 
+
+C     check if same phase space point 
+      if (flg_minlo_real) then 
+         if( (imode.eq.oimode) .and. (olreal.eqv.flg_minlo_real)
+     C        .and. (all(kn_cmpreal(0:3,3:5) .eq. oknp(0:3,3:5)))) then
+            rescfac=orescfac
+            st_mufact2=omuf2
+            return 
+         else
+            oknp(0:3,3:5) = kn_cmpreal(0:3,3:5) 
+            oimode=imode
+            olreal = flg_minlo_real 
+         endif
+      else
+         if((imode.eq.oimode).and. (olreal.eqv.flg_minlo_real)
+     C        .and.(all(kn_cmpborn(0:3,3:4) .eq. oknp(0:3,3:4)))) then
+            rescfac=orescfac
+            st_mufact2=omuf2
+            return 
+         else
+            oknp(0:3,3:4) = kn_cmpborn(0:3,3:4) 
+            oimode=imode
+            olreal = flg_minlo_real 
+         endif
+      endif
 
       rescfac = 1
 
@@ -58,13 +92,24 @@ c     Sudakov for a quark
 c     pb(0:3) is the colourless "boson" momentum
       pb(:)=0d0
 c     sum over colourless particles (they must all come from a single boson decay)
+
       do i=3,nlegborn
 c     the sequence of colourless particles is unchanged in the Born and in the real flavour list
          if (abs(flst_born(i,iuborn)).gt.6) then
             if(flg_minlo_real) then
                pb(:)=pb(:) + kn_cmpreal(:,i)
+C      GZ check that things work as they should 
+               if (i .ne. 3 .or. .not.all(pb(:) .eq. kn_cmpreal(:,3))) then 
+                  write(*,*) 'i,pb,kn_cmpreal(:,3)',i,pb,kn_cmpreal(:,3)
+                  stop 'setlocalscales: Error in pb determination' 
+               endif
             else
                pb(:)=pb(:) + kn_cmpborn(:,i)
+C      GZ check that things work as they should 
+               if (i .ne. 3 .or. .not. all(pb(:) .eq. kn_cmpborn(:,3))) then 
+                  write(*,*) 'i,pb,kn_cmpreal(:,3)',i,pb,kn_cmpborn(:,3)
+                  stop 'setlocalscales: Error in pb determination' 
+               endif
             endif
          endif
       enddo
@@ -72,11 +117,41 @@ c     the sequence of colourless particles is unchanged in the Born and in the r
       ptb2 = pb(1)**2 + pb(2)**2 ! transverse momentum squared
       mb2  = pb(0)**2 - pb(3)**2 - ptb2 ! invariant mass squared
 
-      if(imode.eq.oimode.and.ptb2.eq.optb2.and.mb2.eq.omb2) then
+      if(minlo_jve) then
+C     compute ptj2, i.e pt of leading jet 
+         if (flg_minlo_real) then 
+C     compute kt-distances 
+            d4B = kn_cmpreal(1,4)**2+kn_cmpreal(2,4)**2
+            d5B = kn_cmpreal(1,5)**2+kn_cmpreal(2,5)**2
+            call aux_getdydetadphidr(kn_cmpreal(:,4),kn_cmpreal(:,5),dy,deta,dphi,dr)
+            d45 = min(d4B,d5B)*dr**2/minlo_deltaR**2
+            if (d45 < min(d4B,d5B)) then 
+C      4 and 5 cluster (addition of four-momenta) and become leading jet 
+               ptj2 = (kn_cmpreal(1,4)+kn_cmpreal(1,5))**2+
+     C              (kn_cmpreal(2,4)+kn_cmpreal(2,5))**2
+            elseif (d4B < min(d5B,d45)) then 
+C     parton 4 clusters with beam, parton 5 left, becomes leading jet 
+               ptj2 = d5B
+            elseif (d5B < min(d4B,d45)) then 
+C     parton 5 clusters with beam, parton 4 left, becomes leading jet 
+               ptj2 = d4B
+            else
+               write(*,*) 'd4B, d5B, d45', d4B, d5B, d45
+               stop 'setlocalscales: something wrong in kt-distances'
+            endif
+         else  
+C     this is a born like configuration so pt of leading jet equals ptb2 
+            ptj2 = ptb2 
+         endif
+      endif      
+
+
+      if(imode.eq.oimode.and.ptb2.eq.optb2.and.mb2.eq.omb2.and.optj2.eq.ptj2) then
          rescfac=orescfac
          st_mufact2=omuf2
-         return
+         return 
       else
+         optj2=ptj2
          optb2=ptb2
          omb2=mb2
          oimode=imode
@@ -86,8 +161,20 @@ c         rescfac=0
 c         return
 c      endif
 
+     
+
+C     if minlo_jve is on use ptj1**2 rather than ptB**2
+      if(minlo_jve) then
+         ptsq = ptj2
+      else
+         ptsq = ptb2
+      endif
+C      if (flg_minlo_real) then 
+C         write(*,*) 'ptsq', ptsq, ptb2, mb2 
+C      endif
+
       as=pwhg_alphas(mb2,st_lambda5MSB,st_nlight)
-      y = -as*b0*log(st_renfact**2*ptb2/mb2)
+      y = -as*b0*log(st_renfact**2*ptsq/mb2)
 
       if(y.ge.1) then
          rescfac = 0d0
@@ -95,21 +182,21 @@ c      endif
 c         rescfac1 = rescfac
          return
       endif
-      
-      if(ptb2.gt.mb2) then
+
+      if(ptsq.gt.mb2) then
          rescfac = 1d0
          expsud = 0d0
       else
-         rescfac = sudakov(ptb2,mb2,flav)**2
-         expsud  = 2 * expsudakov(ptb2,mb2,flav)
+         rescfac = sudakov(ptsq,mb2,flav)**2
+         expsud  = 2 * expsudakov(ptsq,mb2,flav)
       endif
 
 c      rescfac1 = rescfac
 
 
 c     alpha_s reweighting
-      mu2=ptb2*st_renfact**2
-      st_mufact2=max(ptb2*st_facfact**2,factsc2min)
+      mu2=ptsq*st_renfact**2
+      st_mufact2=max(ptsq*st_facfact**2,factsc2min)
       omuf2=st_mufact2
       alphas=as/(1-y)-as**2*b1*log(1-y)/(b0*(1-y)**2) 
 
@@ -245,7 +332,6 @@ c     See Eq. (2.9) of arXiv:1212.4504
          b0=(11*CA-2*st_nlight)/(12*pi)
          ini = .false.
       endif
-
       if(sudscalevar) then
          logf = log(st_renfact)
          m2 = q20*st_renfact**2
@@ -292,6 +378,8 @@ C
       implicit none 
       include 'pwhg_st.h'
       include 'pwhg_math.h'
+      include 'pwhg_flg.h'
+      include 'minlo_jve.h' 
       logical isQuark 
       integer theAccuracy
       real * 8 q2h,q20,theExponent
@@ -303,12 +391,14 @@ C
       real * 8 EulerGamma,zeta3  
       real * 8 f0,f1,f2,omy,lomy
       real * 8 pwhg_alphas,powheginput
+      real *8 fclust, fcorrel, deltaR, ln2  
       external pwhg_alphas,powheginput
       logical ini,sudscalevar
       data ini/.true./
       save ini,sudscalevar
       parameter (zeta3 = 1.2020569031595942854d0)
       parameter (EulerGamma = 0.57721566490153286061d0)
+      parameter (ln2 = 0.693147180559945309417232121458176568076d0 )
       
       if(ini) then
          if(powheginput("#sudscalevar").eq.1) then
@@ -318,7 +408,6 @@ C
          endif
          ini = .false.
       endif
-
       if(sudscalevar) then
          logf = log(st_renfact)
          q20_lcl = q20*st_renfact**2
@@ -326,7 +415,6 @@ C
          logf = 0d0
          q20_lcl = q20 
       endif
-
 
       nf = st_nlight         
 c     running coupling coefficients 
@@ -373,8 +461,24 @@ c     A(as) = sum_n A_n (as)^n,     B(as) = sum_n B_n (as)^n,   i.e. no "pi" fac
       A2 = A2/pi**2
       B2 = B2/pi**2
 
+      if (.not. minlo_jve) then 
 c     qT space conversion
-      B2 = B2 + 2*A1**2*zeta3
+         B2 = B2 + 2*A1**2*zeta3
+      else
+C     include correlated and clustering corrections 
+C     taken from (A.18) of 1203.5773
+         deltaR=minlo_deltaR
+         fclust = (-pi**2/12*deltaR**2+deltaR**4/16)*CA 
+C     expansion in deltaR taken from (A.16) of 1203.5773
+         fcorrel = (-131+12*pi**2+132*ln2)*CA/72d0*log(1.74d0/deltaR)
+     C        +(23-24*ln2)*nf/72d0*Log(0.84d0/deltaR)
+     C        +((1429+3600*pi**2+12480*ln2)*CA+(3071-1680*ln2)*nf)/172800*deltaR**2
+     C        +((-9383279-117600*pi**2+1972320*ln2)*CA
+     C        +2d0*(178080*ln2-168401)*nf)/406425600*deltaR**4
+     C        +((74801417-33384960*ln2)*CA+(7001023-5322240*ln2)*nf)/97542144000d0*deltaR**6
+         B2 = B2 - 2*CA/pi**2*(fclust+fcorrel)
+      endif
+
 
 c     add logf dependence 
       B2 = B2 + 2*A2*logf + 2*b0*A1*logf**2 
@@ -421,6 +525,37 @@ c     For this reason, we have to divide the argument of the exponent by a facto
 
       end
 
+      subroutine aux_getyetaptmass(p,y,eta,pt,mass)
+      implicit none
+      real * 8 p(0:3),y,eta,pt,mass,pv
+      real *8 tiny
+      parameter (tiny=1.d-5)
+      y=0.5d0*log((p(0)+p(3))/(p(0)-p(3)))
+      pt=sqrt(p(1)**2+p(2)**2)
+      pv=sqrt(pt**2+p(3)**2)
+      if(pt.lt.tiny)then
+         eta=sign(1.d0,p(3))*1.d8
+      else
+         eta=0.5d0*log((pv+p(3))/(pv-p(3)))
+      endif
+      mass=sqrt(abs(p(0)**2-pv**2))
+      end
 
+      subroutine aux_getdydetadphidr(p1,p2,dy,deta,dphi,dr)
+      implicit none
+      include 'pwhg_math.h' 
+      real * 8 p1(*),p2(*),dy,deta,dphi,dr
+      real * 8 y1,eta1,pt1,mass1,phi1
+      real * 8 y2,eta2,pt2,mass2,phi2
+      call aux_getyetaptmass(p1,y1,eta1,pt1,mass1)
+      call aux_getyetaptmass(p2,y2,eta2,pt2,mass2)
+      dy=y1-y2
+      deta=eta1-eta2
+      phi1=atan2(p1(1),p1(2))
+      phi2=atan2(p2(1),p2(2))
+      dphi=abs(phi1-phi2)
+      dphi=min(dphi,2d0*pi-dphi)
+      dr=sqrt(deta**2+dphi**2)
+      end
 
 
