@@ -216,6 +216,7 @@ PWHG=pwhg_main.o pwhg_init.o bbinit.o btilde.o lhefwrite.o		\
         ubprojections.o sigcollsoft.o sigvirtual.o \
         Born_tm.o  bornmatrix_tm.o  init_couplings-topmass.o nloutils.o   \
         ew.o EWgint.o decay-util.o HPL_full.o \
+	pythia8F77_31.o \
         $(PDFPACK) $(USER)  $(FPEOBJ) $(MCFMFILES) $(H2JVIRTFILES) $(H2JVFILES) lhefread.o pwhg_io_interface.o rwl_weightlists.o rwl_setup_param_weights.o
 
 #LIBDIRMG=.
@@ -228,7 +229,7 @@ $(shell ../svnversion/svnversion.sh>/dev/null)
 
 # target to generate LHEF output
 pwhg_main:$(PWHG) libfiles.a
-	$(FF) $(patsubst %,$(OBJ)/%,$(PWHG)) $(OBJ)/libfiles.a $(LIBS) $(LIBSFASTJET) $(STATIC) -o $@
+	$(FF) $(patsubst %,$(OBJ)/%,$(PWHG)) $(OBJ)/libfiles.a $(LIBS) $(LIBSFASTJET) $(LIBPYTHIA8) $(STATIC) -o $@
 
 
 NNLOPSREWEIGHTER=nnlopsreweighter.o cernroutines.o powheginput.o lhefread.o pwhg_io_interface.o rwl_weightlists.o \

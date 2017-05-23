@@ -67,28 +67,36 @@ c the only parameters relevant for this process are set
 c via powheginput. All others are needed for the
 c madgraph routines not to blow.
       alpha=1/128.9d0
-      alpha=1/1.32506980d+02
-      gfermi = 1.16639000d-05
-      alfas = 0.119d0
-      zmass = 9.11880000d+01
-      tmass = 1.74300000d+02
+C       alpha=1/1.32506980d+02    ! DQ - commented this out - PDG says alpha(Mz) ~ 1/128 
+C       gfermi = 1.16639000d-05   ! I can't find anything more accurate for the moment but I'll keep looking
+      gfermi = 1.1663787000d-05 ! DQ - from PDG
+!       alfas = 0.119d0
+      alfas = 0.11800021884307436 ! DQ - as(Mz) as output by the NNPDF30_nnlo_as_118 PDF set we are using
+!       zmass = 9.11880000d+01
+		zmass = 9.11876000d+01 ! DQ - value from LHCHXSWG (PDG)
+!      tmass = 1.74300000d+02
+		tmass = 1.72500000d+02 ! DQ - value from LHCHXSWG (PDG)
       lmass = 0d0
       mcMS = 0d0
       mbMS = 0d0
-      mtMS = 174d0
+C       mtMS = 174d0
+      mtMS = 162.7d0 ! DQ - value from LHCHXSWG (PDG)
       mtaMS = 1.777d0
       vud = 1d0
       cmass = 0d0
       bmass = 0d0
       lmass=0d0
       hmass = powheginput('hmass')
-      wmass=sqrt(zmass**2/Two+
-     $     sqrt(zmass**4/Four-Pi/Rt2*alpha/gfermi*zmass**2))
-      wmass=8.04190000d+01
+C       wmass=sqrt(zmass**2/Two+
+C      $     sqrt(zmass**4/Four-Pi/Rt2*alpha/gfermi*zmass**2))
+C       wmass=8.04190000d+01
+      wmass =80.3850000d+00 ! DQ - value from LHCHXSWG (PDG)
       twidth=1.50833649d+00
       hwidth = powheginput('hwidth')
-      zwidth=2.44140351d+00
-      wwidth=2.04759951d+00
+C       zwidth=2.44140351d+00
+      zwidth=2.49520000d+00 ! DQ - value from LHCHXSWG (PDG)
+!      wwidth=2.04759951d+00
+		wwidth=2.08500000d+00 ! DQ - value from LHCHXSWG (PDG)
       end
 
       subroutine set_ebe_couplings
