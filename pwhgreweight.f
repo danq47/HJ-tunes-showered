@@ -15,13 +15,14 @@
       integer k
       integer gen_seed,gen_n1,gen_n2
       common/cgenrand/gen_seed,gen_n1,gen_n2
-      real * 8 newweight
+      real * 8 newweight,y,eta,pt,mass,H_y,H_pt
+      real * 8 kren_pwg, kfac_pwg, kren_mrt, kfac_mrt ! KmuR and KmuF for POWHEG and MRT codes respectively
       logical pwhg_isfinite
       external pwhg_isfinite
       character * 3 whichpdfpk
       character * 200 string
-      real * 8 powheginput
-      external powheginput
+      real * 8 powheginput,tune_reweight
+      external powheginput,tune_reweight
       call lhefreadevlhrwgt(iunin,iunrwgt,iret,stringin)
       if(iret.lt.0) then
          write(*,*) ' End of event file! Aborting ...'
@@ -32,6 +33,8 @@
          call gen_btilderw
          newweight=rad_btilde_arr(rad_ubornidx)*
      1        rad_btilde_sign(rad_ubornidx)
+
+
          if(flg_fullrwgt) then
             call fullrwgt(newweight)
          endif
@@ -47,8 +50,25 @@
          call exit(-1)
       endif
 
+c DQ - if we are doing a tunes reweight, call the function and multiply the weight by the appropriate reweighting factor
 
-      call main_pythia8
+
+      if(flg_tunes) then
+
+         call main_pythia8 ! shower with PYTHIA8
+         call getyetaptmass(phep(1:4,ihiggs),H_y,eta,H_pt,mass) ! calculate y and pT for the higgs AFTER showering
+
+         kren_pwg = powheginput("#renscfact")
+         kfac_pwg = powheginput("#facscfact")
+         kren_mrt = powheginput("#rensc_fact_mrt")
+         kfac_mrt = powheginput("#facsc_fact_mrt")
+         newweight = newweight * tune_reweight(H_y, H_pt,
+     1        kren_pwg, kfac_pwg, kren_mrt, kfac_mrt) ! calculate the "tunes" reweight based on this Y,pT and the scales
+      
+      endif
+
+c DQ end modification
+
 
       if(.not.pwhg_isfinite(newweight)) newweight=0d0
       write(string,*) '#new weight,renfact,facfact,pdf1,pdf2',
@@ -1346,7 +1366,9 @@ c$$$
          call exit(-1)
       endif
       end subroutine checkkin
+
       end
+      
 
       subroutine main_pythia8
       implicit none
@@ -1430,6 +1452,5 @@ c do is find the final Higgs boson and save its position in the showered event
 
  123  continue
       end
-     
-      
+
 
