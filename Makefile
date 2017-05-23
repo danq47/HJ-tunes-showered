@@ -8,7 +8,7 @@ PDF=lhapdf
 ## ANALYSIS: none, BnJ, HnJ, alt, NNLOPS
 ##           the first 4 analyses require the FASTJET package, that has to be 
 ##           installed separately (see below)
-ANALYSIS=NZ
+ANALYSIS=tunes
 ## For static linking uncomment the following
 #STATIC= -static
 #
@@ -166,6 +166,18 @@ PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-pheno_2.o fastjetfortran.o \
          genclust_kt.o miscclust.o ptyrap.o r.o swapjet.o jet_finder.o  \
          auxiliary.o get_hdamp.o
 endif
+
+ifeq ("$(ANALYSIS)","tunes")
+##To include Fastjet configuration uncomment the following lines.                                                     
+FASTJET_CONFIG=$(shell which fastjet-config)
+#FASTJET_CONFIG=~/lib/fastjet242/bin/fastjet-config                                                                   
+LIBSFASTJET += $(shell $(FASTJET_CONFIG) --libs --plugins ) -lstdc++
+FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
+PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-tunes.o fastjetfortran.o
+## Also add required Fastjet drivers to PWHGANAL (examples are reported)#PWHGANAL+= fastjetsisconewrap.o fastjetktwra\
+p.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o                                                
+endif
+
 
 %.o: %.f $(INCLUDE)
 	$(FF) -c -o $(OBJ)/$@ $<
