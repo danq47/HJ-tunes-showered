@@ -18,32 +18,25 @@
       common/canalysis_jetveto/analysis_jetveto
 
       character *20 eventfile
+      integer iun
 
       WHCPRG='PYTHIA'
 
       call init_hist
 
-      call getmaxev(maxev)
 
-c      eventfile=pwgprefix(1:lprefix)//'events.lhe'
-c      eventfile="w-events.lhe"
+      call opencountunit(maxev,iun)
+      write(*,*) 'iun:',iun
 
-c      maxev=49000
-c      maxev=1000
-c      maxev=50000
-c      maxev=949000
-c      maxev=100
+      call lhefreadhdr(iun)
 
-      call lhefreadhdr(97)
-
-c      call pythia_init(trim(eventfile(1:)))
       call pythia_init
 
       nevhep=0
 
       do l=1,maxev
 
-         call lhefreadev(97)
+         call lhefreadev(iun)
 
          nevhep=nevhep+1
 
@@ -75,12 +68,12 @@ c               write(*,*) ' done: ',l
          if(iret.eq.1) then
             call pythia_to_hepevt(nmxhep,nhep,isthep,idhep,jmohep,
      1           jdahep,phep,vhep)
-            if(nevhep.lt.2) then
-               do j=1,nhep
-                  write(*,100)j,isthep(j),idhep(j),jmohep(1,j),
-     1           jmohep(2,j),jdahep(1,j),jdahep(2,j), (phep(k,j),k=1,5)
-               enddo
-            endif
+C             if(nevhep.lt.6) then
+C                do j=1,nhep
+C                   write(*,100)j,isthep(j),idhep(j),jmohep(1,j),
+C      1           jmohep(2,j),jdahep(1,j),jdahep(2,j), (phep(k,j),k=1,5)
+C                enddo
+C             endif
 
             call pyanal
 
@@ -111,7 +104,6 @@ c---user's terminal calculations
 
  100  format(i4,2x,i5,2x,i5,2x,i4,1x,i4,2x,i4,1x,i4,2x,5(d10.4,1x))
       end
-
 
       subroutine pyanal
       implicit none
