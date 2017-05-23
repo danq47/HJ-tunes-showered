@@ -1,0 +1,23 @@
+c -*- Fortran -*-
+      call pwhg_io_write(iun, 'SVN status Begin')
+      call pwhg_io_write(iun,
+     1'/unix/theory/quill/POWHEG-RES-INSTALL/POWHEG-BOX-V'//
+     1'2-r3387')
+      call pwhg_io_write(iun,
+     1'URL: svn://powhegbox.mib.infn.it/trunk/POWHEG-BOX-'//
+     1'V2')
+      call pwhg_io_write(iun,
+     1'Rev.3387')
+      call pwhg_io_write(iun,
+     1'clean version')
+      call pwhg_io_write(iun,
+     1'/unix/theory/quill/POWHEG-RES-INSTALL/POWHEG-BOX-V'//
+     1'2-r3387/HJ-tunes-showered')
+      call pwhg_io_write(iun,
+     1'URL: svn://powhegbox.mib.infn.it/trunk/User-Proces'//
+     1'ses-V2/HJ')
+      call pwhg_io_write(iun,
+     1'Rev.3387')
+      call pwhg_io_write(iun,
+     1'clean version')
+      call pwhg_io_write(iun, 'SVN status End')

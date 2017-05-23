@@ -1,0 +1,39 @@
+# a line beginning with 'lhfile' followed by the name of the event file
+
+lhfile pwgevents.lhe
+
+# weights present in the lhfile: 'mtinf', 'mt', 'mtmb', 'mtmb-bminlo'
+
+
+# a line with: 'nnlofiles'
+# followed by a quoted label and the name of a HNNLO output file.
+# In the following the 3 ouput refer to mt=infinity approx,
+# finite mt, and finite mt and mb.
+
+nnlofiles
+'nn-mtinf' HNNLO-LHC8-R04-APX0-11.top
+'nn-mt' HNNLO-LHC8-R04-APX1-11.top
+'nn-mtmb' HNNLO-LHC8-R04-APX2-11.top
+
+# The new desired weights, in the Les Houches format.
+# The user can choose to group them in the way he prefers, and give them
+# the id's he likes.
+# The program determined how to compute each weights from the description
+# line. It loops through the weights id's present in the pwgevents.lhe file
+# and through the labels of the nnlofiles. If a label of a weight and
+# a label of the nnlofiles are both present in the description field
+# of a weight mentioned here, it computes that weight by reweighting
+# the corresponding weights in the lhe file with the nnlo result present
+# in the nnlofiles associated with the label. For example, in the
+# nnlops-mt id in the following it reweights the nn-mtinf weight present
+# in the .lhe file with the nnlo result present in the
+# HNNLO-LHC8-R04-APX0-11.top file.
+
+<initrwgt>
+<weightgroup name='nnl'> 
+<weight id='nnlops-mt'> combine 'nn-mtinf' and 'mtinf' </weight> 
+<weight id='nnlops-mt'> combine 'nn-mt' and 'mt' </weight> 
+<weight id='nnlops-mtmb'> combine 'nn-mtmb' and 'mtmb' </weight> 
+<weight id='nnlops-mtmb-bminlo'> combines 'nn-mtmb' and 'mtmb-bminlo' </weight> 
+</weightgroup>
+</initrwgt>

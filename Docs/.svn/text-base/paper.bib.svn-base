@@ -1,0 +1,114 @@
+@article{Hamilton:2012rf,
+      author         = "Hamilton, Keith and Nason, Paolo and Oleari, Carlo and
+                        Zanderighi, Giulia",
+      title          = "{Merging H/W/Z + 0 and 1 jet at NLO with no merging
+                        scale: a path to parton shower + NNLO matching}",
+      year           = "2012",
+      eprint         = "1212.4504",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      SLACcitation   = "%%CITATION = ARXIV:1212.4504;%%",
+}
+
+@article{Campbell:2012am,
+      author         = "Campbell, John M. and Ellis, R. Keith and Frederix,
+                        Rikkert and Nason, Paolo and Oleari, Carlo and others",
+      title          = "{NLO Higgs Boson Production Plus One and Two Jets Using
+                        the POWHEG BOX, MadGraph4 and MCFM}",
+      journal        = "JHEP",
+      volume         = "1207",
+      pages          = "092",
+      doi            = "10.1007/JHEP07(2012)092",
+      year           = "2012",
+      eprint         = "1202.5475",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      reportNumber   = "FERMILAB-PUB-12-040-T",
+      SLACcitation   = "%%CITATION = ARXIV:1202.5475;%%",
+}
+
+@article{Campbell:2013vha,
+      author         = "Campbell, John M. and Ellis, R. Keith and Nason, Paolo
+                        and Zanderighi, Giulia",
+      title          = "{W and Z bosons in association with two jets using the
+                        POWHEG method}",
+      year           = "2013",
+      eprint         = "1303.5447",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      SLACcitation   = "%%CITATION = ARXIV:1303.5447;%%",
+}
+
+@article{masseffects,
+      author         = "Hamilton, Keith and Nason, Paolo
+                        and Zanderighi, Giulia",
+      title          = "{Finite quark-mass effects in the NNLOPS
+                        POWHEG+MiNLO Higgs generator}",
+      year           = "2015",
+      eprint         = "xxxx.xxxx",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      SLACcitation   = "%%CITATION = ARXIV:1303.5447;%%",
+}
+
+
+@article{Grazzini:2013mca,
+      author         = "Grazzini, Massimiliano and Sargsyan, Hayk",
+      title          = "{Heavy-quark mass effects in Higgs boson production at
+                        the LHC}",
+      journal        = "JHEP",
+      volume         = "1309",
+      pages          = "129",
+      doi            = "10.1007/JHEP09(2013)129",
+      year           = "2013",
+      eprint         = "1306.4581",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      reportNumber   = "ZU-TH-10-13",
+      SLACcitation   = "%%CITATION = ARXIV:1306.4581;%%",
+}
+@article{Catani:2007vq,
+      author         = "Catani, Stefano and Grazzini, Massimiliano",
+      title          = "{An NNLO subtraction formalism in hadron collisions and
+                        its application to Higgs boson production at the LHC}",
+      journal        = "Phys.Rev.Lett.",
+      volume         = "98",
+      pages          = "222002",
+      doi            = "10.1103/PhysRevLett.98.222002",
+      year           = "2007",
+      eprint         = "hep-ph/0703012",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      SLACcitation   = "%%CITATION = HEP-PH/0703012;%%",
+}
+@article{Grazzini:2008tf,
+      author         = "Grazzini, Massimiliano",
+      title          = "{NNLO predictions for the Higgs boson signal in the H
+                        $\rightarrow$ $W^{+}W^{-}$ $\rightarrow$ $\bar{l}\nu$ $l\bar{\nu}$  and H $\rightarrow$ ZZ $\rightarrow$ 4l
+                        decay channels}",
+      journal        = "JHEP",
+      volume         = "0802",
+      pages          = "043",
+      doi            = "10.1088/1126-6708/2008/02/043",
+      year           = "2008",
+      eprint         = "0801.3232",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      SLACcitation   = "%%CITATION = ARXIV:0801.3232;%%",
+}
+
+@article{Hamilton:2013fea,
+      author         = "Hamilton, Keith and Nason, Paolo and Re, Emanuele and
+                        Zanderighi, Giulia",
+      title          = "{NNLOPS simulation of Higgs boson production}",
+      journal        = "JHEP",
+      volume         = "1310",
+      pages          = "222",
+      doi            = "10.1007/JHEP10(2013)222",
+      year           = "2013",
+      eprint         = "1309.0017",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ph",
+      reportNumber   = "MCNET-13-11, CERN-PH-TH-2013-205, OUTP-13-18P",
+      SLACcitation   = "%%CITATION = ARXIV:1309.0017;%%",
+}

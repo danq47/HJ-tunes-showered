@@ -1,0 +1,13 @@
+8d3             ! sroot
+1 1             ! ih1 ih2
+125.5d0         ! hmass (hnnlo then gives Gamma_H = 0.004221 GeV)
+62.75d0 62.75d0 ! mur,muf
+2               ! order
+1               ! higgsdec
+'tota'          ! part
+15 8000000      ! itmx1, ncall1
+30 8000000      ! itmx2, ncall2
+617             ! rseed
+92 0            ! iset, nset
+'MSTW2008nnlo68cl.LHgrid' 0  ! set, member (LHAPDFs)
+'hnnlo'         ! runstring

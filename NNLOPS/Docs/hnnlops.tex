@@ -1,0 +1,692 @@
+\documentclass[11pt,a4paper]{article}
+\pdfoutput=1 % if your are submitting a pdflatex (i.e. if you have
+             % images in pdf, png or jpg format)
+
+\usepackage{jheppub}
+
+\usepackage[T1]{fontenc}
+
+\usepackage[latin9]{inputenc}
+\usepackage{esint}
+
+
+\newcommand{\noun}[1]{{\tt #1}}
+\newcommand{\LHAPDF}{\noun{LHAPDF}}
+\newcommand{\POWHEG}{\noun{POWHEG}}
+\newcommand{\POWHEGBOX}{\noun{POWHEG BOX}}
+\newcommand{\MINLO}{\noun{MiNLO}}
+\newcommand{\HJMINLO}{\noun{HJ-MiNLO}}
+\newcommand{\HNNLO}{\noun{hnnlo}}
+\newcommand{\NNLOPS}{\noun{NNLOPS}}
+\newcommand{\NLOPS}{\noun{NLOPS}}
+\newcommand{\PYTHIA}{\noun{Pythia}}
+\newcommand{\HERWIG}{\noun{Herwig}}
+\newcommand{\MCatNLO}{\noun{MC@NLO}}
+\newcommand{\ggH}{\noun{H}}
+\newcommand{\HQT}{\noun{HqT}}
+\newcommand{\HJ}{\noun{HJ}}
+\newcommand{\MEPS}{\noun{Meps}}
+\newcommand{\JETVHETO}{\noun{JetVHeto}}
+\newcommand{\FASTJET}{\noun{FastJet}}
+\newcommand{\as}{\alpha_{\scriptscriptstyle \mathrm{S}}}
+\newcommand{\Kr}{K_{\scriptscriptstyle \mathrm{R}}}
+\newcommand{\Kf}{K_{\scriptscriptstyle \mathrm{F}}}
+\newcommand{\mur}{\mu_{\scriptscriptstyle \mathrm{R}}}
+\newcommand{\muf}{\mu_{\scriptscriptstyle \mathrm{F}}}
+\newcommand{\pt}{p_{\scriptscriptstyle \mathrm{T}}}
+\newcommand{\pth}{p_{\scriptscriptstyle \mathrm{T}}^{\scriptscriptstyle \mathrm{H}}}
+\newcommand{\ptjone}{p_{\scriptscriptstyle \mathrm{T}}^{\scriptscriptstyle \mathrm{j_{1}}}}
+\newcommand{\kt}{k_{\scriptscriptstyle \mathrm{T}}}
+\newcommand{\mh}{m_{\scriptscriptstyle \mathrm{H}}}
+\newcommand{\mH}{mh}
+
+\newcommand{\ptjo}{\pt^{{\scriptscriptstyle \mathrm{j}_{1}}}}
+\newcommand{\hc}{\beta}
+\newcommand{\hgam}{\gamma}
+\newcommand{\smallk}{\kappa}
+\newcommand{\comment}[1]{{\bf [#1] }}
+
+\usepackage[mathscr]{euscript}
+
+% continuation line arrows
+\newcommand{\continueend}[0]{\raisebox{2.5mm}%
+{\rotatebox{-90}{$\curvearrowright$}}}
+\newcommand{\continuebeg}[0]{\raisebox{-0mm}%
+{\rotatebox{90}{$\curvearrowleft$}}}
+
+
+
+\title{{NNLOPS simulation of Higgs boson production}}
+
+% more complex case: 4 authors, 3 institutions, 2 footnotes
+\author[a]{Keith Hamilton}
+\author[b]{Paolo Nason}
+\author[c]{Emanuele Re}
+\author[c]{Giulia Zanderighi}
+
+% The "\note" macro will give a warning: "Ignoring empty anchor..."
+% you can safely ignore it.
+
+\affiliation[a]{Department of Physics and Astronomy, University College London,\\London, WC1E 6BT, UK}
+\affiliation[b]{INFN, Sezione di Milano Bicocca,\\Piazza della Scienza 3, 20126 Milan, Italy}
+\affiliation[c]{Rudolf Peierls Centre for Theoretical Physics, University of Oxford\\1 Keble Road, UK}
+
+% e-mail addresses: one for each author, in the same order as the authors
+\emailAdd{keith.hamilton@ucl.ac.uk}
+\emailAdd{paolo.nason@mib.infn.it}
+\emailAdd{e.re1@physics.ox.ac.uk}
+\emailAdd{g.zanderighi1@physics.ox.ac.uk}
+
+\abstract{We describe the usage
+  of the generator, developed in ref.~\cite{Hamilton:2013fea},
+  for gluon fusion Higgs production interfaced to a shower Monte Carlo
+  that achieves next-to-next to leading order accuracy in QCD.}
+
+%\makeatother
+
+\begin{document}
+\maketitle
+\flushbottom
+
+\section{Introduction}
+Here we give the instructions to use the code developed in
+ref.~\cite{Hamilton:2013fea} for the construction of a Monte
+Carlo showered sample for gluon fusion Higgs production that
+is accurate at the next-to-next to leading order (NNLO)
+in QCD. The method makes use of the \HNNLO{} code
+of refs.~\cite{Catani:2007vq,Grazzini:2008tf} and of the
+\POWHEG{} \HJ{} generator~\cite{Campbell:2012am} improved with the \MINLO{}
+procedure according to refs.~\cite{Hamilton:2012np,Hamilton:2012rf}.
+
+The \MINLO{} improved \HJ{} generator (\HJMINLO{}
+from now on) as it is set out in \cite{Hamilton:2012rf},
+is crucial for our NNLOPS implementation. In fact, it reaches
+NLO accuracy not only for $H+{\rm 1jet}$ observables, but
+also for inclusive ones. Furthermore, it does this in a seamless
+way, without introducing unphysical cuts in order to separate
+the 0 and 1-jet final states. This feature allows to reach
+NNLO accuracy by a simple reweighting procedure, making
+use of a one parameter distribution computed with the
+\HNNLO{} code.
+
+These instructions explain how to use the relevant code\footnote{The
+code can be found in the {\tt HNNLOPS} subdirectory of the {\tt HJ}
+process in the {\tt User-Processes-V2} directory. Instructions for
+downloading the code can be found in \url{http://powhegbox.mib.infn.it}.}
+in conjunction with the \HNNLO{} and \HJ{} programs to
+generate \NNLOPS{} accurate samples.
+
+\section{Input: NNLO rapidity spectrum\label{sec:NNLO-ingredients}}
+The fundamental NNLO ingredient required to obtain NNLO accurate
+event samples is, for gluon fusion Higgs production, the Higgs
+boson's rapidity spectrum.\footnote{In general, for \NNLOPS{} simulations
+one requires an NNLO accurate distribution for some Born kinematics.
+In this case the Born kinematics is fully specified in terms of the
+rapidity of the boson.} We here give instructions on how to obtain
+such distributions, suitable for combination with the \HJMINLO{}
+events via the {\tt{HJ/NNLOPS}} reweighting code.
+
+\begin{enumerate}
+\item Make sure that the \LHAPDF{} package is installed:\\
+\hspace*{5mm}
+{\url{https://lhapdf.hepforge.org}}\\
+The current version of this code has only been tested with up to
+version 5.8.9. In particular, for the installation of \HNNLO{},
+the command {\tt{lhapdf-config ---libdir}} should return the 
+location of the installed {\noun{Lhapdf}} libraries.
+
+\item Download \HNNLO{} from the following {\tt url}:\\
+\hspace*{5mm}
+{\url{http://theory.fi.infn.it/grazzini/codes/hnnlo-v1.3.tgz}}
+
+\item Unpack the tarball in a convenient location\\
+\hspace*{5mm}
+{\tt{work\$ cp ~/Downloads/hnnlo-v1.3.tgz ./}}\\
+\hspace*{5mm}
+{\tt{work\$ tar -xzvf hnnlo-v1.3.tgz}}\\
+\hspace*{5mm}
+{\tt{work\$ ls hnnlo-v1.3}}\\
+Under the parent directory {\tt{hnnlo-v1.3}} one should find subdirectories
+{\tt{bin}}, {\tt{doc}}, {\tt{obj}}, {\tt{src}}, and a {\tt{makefile}}.
+
+\item Enter the \HNNLO{} parent directory\\
+\hspace*{5mm}
+{\tt{work\$ cd hnnlo-v1.3}}
+
+\item  Replace the \HNNLO{} default {\tt{makefile}} with the one
+from the {\tt{HJ/NNLOPS}} directory\\
+\hspace*{5mm}
+{\tt{work\$ cp /path/to/HJ/NNLOPS/HNNLO-makefile ./makefile}}
+
+\item  Copy the \HNNLO{} patches directory into the parent directory\\
+\hspace*{5mm}
+{\tt{work\$ cp -r /path/to/HJ/NNLOPS/HNNLO-patches ./}}
+
+\item  Build the code\\
+\hspace*{5mm}{\tt{work\$ make}}\\
+A message {\tt{----> HNNLO compiled with LHAPDF routines <----}}
+indicates success.
+
+\item  Copy over the template input file and, if parallel runs are required,
+the related script to set up multiple runs\\
+\hspace*{5mm}{\tt{work\$ cd bin}}\\
+\hspace*{5mm}{\tt{work\$ cp /path/to/HJ/NNLOPS/HNNLO.input ./}}\\
+\hspace*{5mm}{\tt{work\$ cp /path/to/HJ/NNLOPS/HNNLO-mur-muf-scan.sh ./}}\\
+
+\item  Either edit the input file or the script for parallel runs as desired.
+The former is nothing but a standard \HNNLO{} input file and may be
+run simply by typing\\
+\hspace*{5mm}{\tt{work\$ ./hnnlo < HNNLO.input >\,> my.log}}\\ 
+yielding a {\tt{hnnlo.top}} histogram file.
+\vspace{3mm}\\
+Alternatively one can run the {\tt{HNNLO-mur-muf-scan.sh}} script
+in the same directory. The script generates \HNNLO{} input files
+and shell scripts for the generation of runs for a number of different
+rescaling factors for $\mur$ and
+$\muf$, and, moreover, a number of sequentially ordered seeds (specified
+by the {\tt{njobs}} variable) for each $\mur$, $\muf$ value.
+Runs different only by the value of the random seed may be combined to increase
+the statistical precision. Statistically equivalent histogram files may be
+combined with the mergedata program:\\
+\hspace*{5mm}{\tt{work\$ cp /path/to/HJ/NNLOPS/mergedata.f ./}}\\
+\hspace*{5mm}{\tt{work\$ gfortran -o mergedata -c mergedata.f ; chmod +x mergedata}}\\
+\hspace*{5mm}{\tt{work\$ ./mergedata 1 file\_1.top ... file\_N.top}}\\
+\hspace*{5mm}{\tt{work\$ mv fort.12 hnnlo.top}}\vspace{3mm}\\
+%
+Lastly, we draw attention to the fact that the default
+{\tt{HNNLO.input}} file supplied sets
+$\mur=\muf={\frac{1}{2}}m{_{\scriptscriptstyle{H}}}$ as the central scale
+choices about which the scale variations are carried out by the factors
+mentioned earlier.
+
+In order to produce the \HNNLO{} output for ref.~\cite{Hamilton:2013fea}, for each scale choice, 
+we used  120M integration points for the grid preparation, 
+and about 150-200 runs with 
+240M points each for the integration stage. 
+
+\item  Finally, for the purposes of setting the \HJMINLO{} input parameters
+  consistently with those used for \HNNLO{}, make a note of the Higgs boson
+  width calculated by \HNNLO{} in its initialisation phase. This will appear
+  at the beginning of the \HNNLO{} on-screen output, as follows
+\vspace{3mm}\\
+{\tt{CCCCCCCCCCCCCCC SM Higgs parameters CCCCCCCCCCCCCCCC}}\\
+{\tt{C \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C}}\\
+{\tt{C   Mh      =  125.50 GeV\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C}}\\
+{\tt{C   Gamma(H)= 0.004221 GeV\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C}}\\
+{\tt{C \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C}}\\
+
+\end{enumerate}
+
+\noindent We emphasise that \HNNLO{} and \HJMINLO{} must be run with
+the same values of the Higgs mass and decay width, and with the same
+PDFs (and $\alpha_s$).
+
+\section{Input: {\HJMINLO{}} events\label{sub:HJ-MINLO-ingredients}}
+With the NNLO input in hand the other fundamental ingredient needed for the
+NNLO reweighting procedure are the \HJMINLO{} Les Houches event files.
+Strictly speaking, the \HJMINLO{} code does not require any
+modification for this purpose. Moreover the running of the program proceeds
+in the usual way. The important (albeit obvious) point is to maintain
+consistency of the physical parameters in \HNNLO{} and \HJMINLO{}. To this
+end we describe, below, all relevant details involved in this.
+
+\begin{enumerate}
+\item  The denominator in the reweighting factor is computed from the
+       generated Les Houches sample. Thus, for the reweighting to make
+       sense, there should be enough events in the Les Houches file.
+       As a guideline, we suggest to use no less than 500K events.
+\item  A large number of physical parameters used by the \HJMINLO{} code,
+  such as the Fermi constant, are assigned by the subroutine
+  {\tt{init\_couplings}}
+  defined in file\linebreak {\tt{HJ/init\_couplings.f}}. As in the case of
+  the \HNNLO{} {\tt{mdata.f}} file, some of the parameters in this file may
+  be irrelevant for gluon fusion Higgs production. 
+  Nevertheless, in {\tt{HJ/NNLOPS/init\_couplings.f}} we provide
+  a version of this routine edited for maximum consistency with the physical
+  parameters in the {\tt{mdata.f}} file we supply for \HNNLO{}. We therefore
+  recommend using these inputs in place of the \POWHEGBOX{} defaults. This
+  can be done, for instance, by overwriting the latter and (re-)compiling the \HJMINLO{}
+  code:
+  \vspace{3mm}\\
+  \hspace*{5mm}{\tt{work\$ cd /path/to/HJ/}}\\
+  \hspace*{5mm}{\tt{work\$ cp NNLOPS/init\_couplings.f ./}}\\
+  \hspace*{5mm}{\tt{work\$ make}}
+
+\item  The main physical parameters to ensure consistency with respect to
+  the \HNNLO{} runs are set in the {\tt{powheg.input}} file under
+  {\tt{HJ/testrun-lhc/}},
+  or, if running parallel \HJMINLO{} jobs, in {\tt{powheg.input-save}}
+  under {\tt{HJ/testparallel-lhc/}}. In particular, the Higgs boson mass
+  should be set according to the value input to \HNNLO{}, and the
+  Higgs boson width should be set to the
+  on-screen value computed by \HNNLO{}.
+  For a Higgs mass of 125.5 GeV for example we set in
+  {\tt{powheg.input}}  or {\tt{powheg.input-save}}:\vspace{3mm}\\
+  {\tt{hmass 125.5}}\\
+  {\tt{hwidth 0.004221D0}}\\
+  {\tt{bwcutoff 1000}}\vspace{3mm}\\
+  where {\tt{bwcutoff 1000}} determines that the code generate off-shell
+  Higgs masses, ${m_{\scriptscriptstyle{\mathrm{H}}}^{*}}$, in the range
+  ${m_{\scriptscriptstyle{\mathrm{H}}}}-1000\,{\Gamma_{\scriptscriptstyle{\mathrm{H}}}}<{m_{\scriptscriptstyle{\mathrm{H}}}^{*}}<{m_{\scriptscriptstyle{\mathrm{H}}}}+1000\,{\Gamma_{\scriptscriptstyle{\mathrm{H}}}}$. In addition we require that the Higgs
+  particle is left undecayed at the Les Houches event level\vspace{3mm}\\
+  {\tt{hdecaymode -1}}\vspace{3mm}\\
+  A further useful (although not mandatory) technical input, involves
+  suppressing the generation of low transverse momentum events in order
+  to better  populate high ${p_{\scriptscriptstyle{\mathrm{T}}}}$ tails. This can
+  be achieved by setting e.g.\vspace{3mm}\\
+  {\tt{bornsuppfact 10}}\vspace{3mm}\\
+  Further explanation of the {\tt{bornsuppfact}} parameter and other workings
+  of the \HJMINLO{} program can be found in
+  {\tt{/path/to/HJ/Docs/manual-BOX-HJ.pdf}}. Also, for detailed instructions
+  on setting up the \HJMINLO{} program to perform numerous runs in parallel
+  see section 4.1 in
+  {\tt{/path/to/W2jet/Docs/manual-BOX-WZ2jet.pdf}}\vspace{3mm}\\
+  Lastly, we add that although
+  it is not strictly necessary to generate the \HJMINLO{} events using a
+  NNLO PDF, in the limited studies that we have carried out to date with
+  the \NNLOPS{} code, we have found good agreement with higher order 
+  resummation programs using the MSTW 2008 NNLO set \cite{Martin:2009iq}.
+  This can be selected by setting \LHAPDF{} indices\vspace{3mm}
+  {\tt{lhans1   21200}} and
+  {\tt{lhans2   21200}} 
+  in {\tt{powheg.input}} or {\tt{powheg.input-save}}.
+
+
+\end{enumerate}
+
+\noindent Again, we emphasise that ultimately the responsibility for ensuring
+the consistent running of \HNNLO{} and \HJMINLO{}, to obtain inputs
+for reweighting procedure, rests with the user.
+
+\section{Reweighting\label{sub:Reweighting}}
+
+The NLO-to-NNLO weight factor assigned to the \HJMINLO{} events is
+\begin{equation}
+\mathcal{W}\left(y,\, \pt\right)=h\left(\pt\right)\,\frac{\smallint d\sigma^{{\scriptscriptstyle \mathrm{NNLO\phantom{i}}}}\,\delta\left(y-y\left(\Phi\right)\right)-\smallint d\sigma_{B}^{{\scriptscriptstyle \mathrm{MINLO}}}\,\delta\left(y-y\left(\Phi\right)\right)}{\smallint d\sigma_{A}^{{\scriptscriptstyle \mathrm{MINLO}}}\,\delta\left(y-y\left(\Phi\right)\right)}+\left(1-h\left(\pt\right)\right)\,,\label{eq:NNLOPS-overall-rwgt-factor-1}
+\end{equation}
+where $y$ is the Higgs boson rapidity and $\pt$ is the transverse momentum
+of the leading jet in the LHE events, and
+\begin{eqnarray}
+d\sigma_{A} & = & d\sigma\, h\left(\pt\right)\,,\label{eq:NNLOPS-dsig0}\\
+d\sigma_{B} & = & d\sigma\,\left(1-h\left(\pt\right)\right)\,,\label{eq:NNLOPS-dsig1}
+\end{eqnarray}
+with $h$ a monotonic profile function 
+\begin{equation}
+h(\pt)=\frac{(\hc\, m_{{\scriptscriptstyle \mathrm{H}}})^{2}}{(\hc\, m_{{\scriptscriptstyle \mathrm{H}}})^{2}+\pt^{2}},\label{eq:NNLOPS-hpT-fn-defn}
+\end{equation}
+and $\hc$ a constant parameter. 
+On convoluting $\mathcal{W}\left(y,\, \pt\right)$ with the \HJMINLO{} differential cross section
+and integrating over $\pt$ one finds, exactly,
+\begin{eqnarray}
+\left(\frac{d\sigma}{dy}\right)^{{\scriptscriptstyle \mathrm{NNLOPS}}} & = & \left(\frac{d\sigma}{dy}\right)^{{\scriptscriptstyle \mathrm{NNLO}}}\,.\label{eq:NNLOPS-NNLOPS-eq-NNLO_0+MINLO_1-1}
+\end{eqnarray}
+For a proof of why such a reweighting procedure leads to NNLO accuracy in
+general, and not simply the inclusive rapidity spectrum, we refer the
+reader to Sect.~2.1 of ref.~\cite{Hamilton:2013fea}. 
+
+The role of the profile function $h$ and, in particular, the $\hc$
+parameter within it, is, roughly speaking, to determine how to spread out
+the NLO-to-NNLO corrections along the $\pt$ axis. For
+$\hc=\infty$ the corrections are spread uniformly in $\pt$ (see e.g.
+fig.~3 of ref.~\cite{Hamilton:2013fea}), while for $\hc={\frac{1}{2}}$
+they are concentrated in the region $\pt<\hc\,\mh$. In the latter
+respect the $\hc$ parameter plays a similar role to the resummation
+scale in dedicated resummation calculations, and as such we favour 
+that $\hc$ be set consistently with the preferred values in those.
+Thus we recommend $\hc={\frac{1}{2}}$ in carrying out the reweighting.
+Indeed for $\hc={\frac{1}{2}}$ we find good agreement with dedicated
+NNLL+NNLO calculations of the Higgs boson transverse momentum and the
+0-jet veto efficiency wherein the resummation scale was set to
+${\frac{1}{2}}\mh$ (see figs.~5 and 7 of ref.~\cite{Hamilton:2013fea}).
+
+We should emphasise that, while our NNLOPS simulation is formally NNLO
+accurate for inclusive quantities, the accuracy of its resummation of
+all-orders large logarithms is not at the
+NNLL+NNLO level. We recommend that the predictions of such calculations
+be used to `tune' the \NNLOPS{} simulation (in particular the $\hc$
+parameter) to approximate the yet higher order, large logarithmic terms
+which are not properly accounted for. Setting $\hc={\frac{1}{2}}$ appears
+to do a very good job in this respect, thus it is our default, recommended
+value.
+
+\subsection{A simple run\label{sec:simple-reweighting}} 
+
+The code to be used in order to produce an NNLO-reweighted event file
+can be found in the {\tt{NNLOPS/Reweighter/}} directory.
+This program takes as input the \HNNLO{} output files (i.e. the
+files with the {\tt .top} suffix) and the \HJMINLO{} LHE file, and
+produces as output a new LHE file, where after each event new weights
+are added, corresponding to the NNLO reweighted events. The new weights
+appear, before the {\tt <\textbackslash{}event>} line,
+in lines of the form
+\begin{verbatim}
+#new weight,renfact,facfact,pdf1,pdf2 <weight> <KR> <KF> <npdf1> <npdf2> \ 
+       <pdftag>  <HNNLO-identifier>
+\end{verbatim}
+where  {\tt <weight>} is the weight of the event, {\tt <KR>} and {\tt <KF>}
+are the renormalization and factorization scale factors, {\tt <npdf1>} and
+{\tt  <npdf2>} are the pdf set number for the negative and positive rapidity
+ incoming hadrons, {\tt <pdftag>} is either {\tt mlm}
+if the internal PDF package of the \POWHEGBOX{} is used, or {\tt lha} if
+\LHAPDF{} is used instead.
+Finally  {\tt <HNNLO-identifier>} is an identifier of no more than six characters,
+provided by the user when the run is performed.
+
+The run is carried out in the following way. In the {\tt{NNLOPS/Reweighter/}}
+directory one enters
+\begin{verbatim}
+$ make minnlo
+$ ./minnlo <HJMiNLO-eventfile> <HNNLO-identifier1> <HNNLO-outputfile1> \
+          [<HNNLO-identifier2> <HNNLO-outputfile2> ... ]}}\vspace{3mm}
+\end{verbatim}
+where {\tt <HJMiNLO-eventfile[1...]>} is a LH file (suffix {\tt .lhe})
+containing events produced with \HJMINLO{}, obtained as described in
+sec.~\ref{sub:HJ-MINLO-ingredients}, whereas {\tt <HNNLO-outputfile[1 ...]>}
+are the final histogram file (suffix {\tt .top}) produced from the \HNNLO{}
+run(s), as described in sec~\ref{sec:NNLO-ingredients}.
+It is good practice to use for the {\tt HNNLO-identifier}
+a name related to the particular \HNNLO{} settings being used when
+generating the corresponding {\tt <HNNLO-outputfile[1 ...]>} file (i.e. scales,
+parton distributions, etc.), as
+it will be more clear in sec.~\ref{sec:Estimating-uncertainties}.
+% The default profile function used to perform the
+%NLO-to-NNLO reweighting is computed internally from the inputs
+%given to the {\tt minnlo} executable, and it corresponds to the
+%recommended setting described at the end of
+%sec.~\ref{sub:Reweighting}.\footnote{To select a different profile
+%  function to perform the NLO-to-NNLO reweighting, {\tt minnlo} should
+%  be called with an optional (integer) argument ({\tt [<index
+%    (1:13)>]}), after the last \HNNLO{} histogram file. This option
+%  should be used only by developers.}  
+At the end of the program execution, a new LH file will be present in
+the run directory, named as the {\tt HJMiNLO-eventfile} event file,
+but with a suffix {\tt .nnlo}. 
+%Notice in particular that the jet
+%radius $R$ has to match the value used with \HNNLO{} (which we
+%recommend to be 0.7). 
+This LH file is the final output of the {\tt
+  minnlo} NLO-to-NNLO reweighter program, and can now be read and
+showered by \PYTHIA{} or \HERWIG{}, as it is usually done with LH
+event files generated by \POWHEGBOX{}.
+
+
+The program takes few minutes to reweight a LH file produced by
+\HJMINLO{} containing 500000 events. The output printed on the
+terminal at run time is self explanatory.
+
+%We have also included a
+%template script ({\tt runminnlo\_template.sh}) to help the user.
+
+
+\subsection{Estimating uncertainties\label{sec:Estimating-uncertainties}}
+
+The conservative Ansatz we recommend in estimating errors (the one
+employed in ref.~\cite{Hamilton:2013fea}) is that the $\mur$ and
+$\muf$ scales in the NNLO and NLO inputs should be varied in a fully
+independent way. In doing so we regard the uncertainties in the
+normalizations of distributions, e.g. the transverse momentum spectrum
+of the Higgs boson, as being independent of the respective
+uncertainties in the shapes --- at least in the low $\pt$ region
+covered by the profile function, $h(\pt)$.  The former are determined
+by the \HNNLO{} program, while the latter are due to
+\HJMINLO{}. Outside of the low $\pt$ region, in the part corresponding
+to the $1-h(\pt)$ term in eq.~(\ref{eq:NNLOPS-overall-rwgt-factor-1}),
+the uncertainty is given by the standard \HJMINLO{} computation (which
+there corresponds to that of conventional NLO with $\mur=\muf=\pt$ for
+the central scale choice).
+
+In order to compute an uncertainty band, one first needs to have
+obtained multiple outputs from \HNNLO{} and \HJMINLO{} varying $\mur$
+and $\muf$. For the sake of simplicity, we will now describe a case
+where $\mur$ and $\muf$ are kept equal both when running \HNNLO{} and
+\HJMINLO{}. We call this situation a ``3x3 pts'' scale variation
+study: for each event we will obtain 9 NNLO weights, associated to
+each of the 9 possible combinations among 3 results from \HNNLO{} and
+3 from \HJMINLO{}.  This procedure is general enough to be
+straightforwardly adapted to the more general case of a ``7x7 pts''
+scale variation, or variation thereof.
+
+In the ``3x3 pts'' case, the needed inputs are 3 histogram files from
+\HNNLO{}, which we will call {\tt HNNLO-outputfile-QQ.top}, {\tt
+  HNNLO-outputfile-HH.top} and {\tt HNNLO-outputfile-11.top}, for
+values of $\mur=\muf=\{\mh/4,\mh/2,\mh\}$ respectively.  Similarly,
+the user needs to have obtained a LH file from \HJMINLO{} where 3
+weights are associated to each event. This file has to be obtained
+with the \POWHEGBOX{} reweighting machinery: the 3 lines in between
+the last line of each event record and the {\tt </event>} tag should
+have the format
+\begin{verbatim}
+#new weight,renfact,facfact,pdf1,pdf2 <weight> <KR> \ 
+    <KF> <npdf1> <npdf2> <pdftag>
+\end{verbatim}
+%
+The NLO-to-NNLO reweighter program should now be invoked as follows:
+\begin{verbatim}
+$ ./minnlo HJMiNLO-events.lhe HH HNNLO-outputfile-HH.top \
+        QQ HNNLO-outputfile-QQ.top 11  HNNLO-outputfile-11.top
+\end{verbatim}
+and in this case it is reasonable to use {\tt HH, QQ, 11} as
+``identifier'' strings for the 3 \HNNLO{} histogram files.  At the end
+of the run, 9 lines will be present after each event record, each one
+containing the NNLO weight associated to the \HJMINLO{} result
+labelled by the values of the pair ({\tt <KR>}, {\tt
+  <KF>}) and the \HNNLO{} result identified by the {\tt
+  HNNLO-identifier} appended at the end of each line.
+
+\section{Example analysis\label{sec:Analysis}}
+
+The analysis used for the study in
+ref.~\cite{Hamilton:2013fea} can be found in
+{\tt{pwhg\_analysis-pheno\_2.f}}. Either this analysis, or the {\tt pwhg\_analysis-release.f} should be used to 
+produce the NNLO-reweighted LH file (the former is extension of the latter to include physical distributions of interest).
+%
+More interestingly, it can also be used to analyse events after the
+showering stage. In this case, in the {\tt Makefile} under the {\tt
+  HJ} directory, in the section where the analysis files are defined,
+the following line should be used:
+\vspace{3mm}\\
+\hspace*{5mm}{\tt{PWHGANAL=pwhg\_bookhist-multi.o
+    pwhg\_analysis-pheno\_2.o
+    fastjetfortran.o \\
+    \hspace*{15mm} genclust\_kt.o miscclust.o ptyrap.o r.o swapjet.o
+    jet\_finder.o  \\
+    \hspace*{15mm} auxiliary.o get\_hdamp.o}}\vspace{3mm}\\
+%
+As usual, \FASTJET{} should be linked too. 
+
+In order to perform showering and analysis of the \NNLOPS{} LHE files,
+one needs to be able to use the information in the {\tt \#new weight}
+lines. This information can easily be converted to the standard Les
+Houches format specified in
+\url{http://phystev.in2p3.fr/wiki/2013:groups:tools_lheextension}. At
+the moment we do not provide script executable in order to perform
+this conversion. These can be provided upon request.
+
+\section{Suggested citations}
+If you use this code please cite the inclusive Higgs boson production
+\NNLOPS{} paper \cite{Hamilton:2013fea} and the \HJMINLO{} paper which
+precedes and lays much of the foundations for it \cite{Hamilton:2012rf}.
+The \NNLOPS{} simulation fundamentally relies on the NNLO Higgs boson
+production calculation of refs.~\cite{Catani:2007vq,Grazzini:2008tf},
+and so these works should also be cited.
+
+
+\appendix
+
+
+\section{Code description}
+In this section we briefly record the various additions and modifications
+to existing \HNNLO{} and \POWHEGBOX{} code used to produce \NNLOPS{} events.
+
+\subsection{\HNNLO\label{sec:HNNLO-code}}
+\begin{itemize}
+
+\item {\tt{makefile}} ({\tt{HNNLO-makefile}})
+  \begin{itemize}
+  \item The \HNNLO{} {\tt{makefile}} is modified by
+    prepending {\tt{\$(HNNLOHOME)/HNNLO-patches}} to
+    the {\tt{\$DIRS}} variable, introducing a variable {\tt{\$PATCHES}}
+    equal to the concatenation of the following object files in this list,
+    plus the removal of those elements from the other {\tt{Makefile}}
+    variables (avoiding duplication). In this way the modified \HNNLO{}
+    files below are compiled and linked from {\tt{HNNLO-patches}} instead
+    of the default versions in the default locations.
+  \end{itemize}
+
+\item {\tt{mbook.f}}
+  \begin{itemize}
+  \item The {\tt{mtop}} subroutine, which outputs the \HNNLO{} histograms
+    to a text file, has undergone a minor modification so as to have the
+    same format as the \HJMINLO{} histogram output, to ease comparisons
+    and for use in the reweighting program.
+  \end{itemize}
+
+\item {\tt{mdata.f}}
+  \begin{itemize}
+  \item This file contains the values of numerous physical constants in
+    \HNNLO{} e.g. the Fermi's constant $G_{F}$. The great majority of these
+    constants should be irrelevant in the context of gluon fusion Higgs
+    boson production. Moreover, any inconsistencies between these and
+    the corresponding values used in the \HJMINLO{} program should result
+    in negligible differences. The main parameters to 
+    seek consistency between \HJMINLO{} and \HNNLO{} codes are the Fermi's
+    constant $G_{F}$ and the top mass. Nevertheless, we have edited all
+    parameters in this file to maximize agreement with the corresponding
+    \HJMINLO{} settings.
+  \end{itemize}
+
+\item {\tt{plotter.f}}
+  \begin{itemize}
+  \item This file contains an example analysis for \HNNLO{} by
+    default.  We have modified this analysis substantially to produce
+    histograms of the Higgs boson's rapidity distribution inclusively
+    and also in the presence of a number of different profile
+    functions. All but the first of these histograms, the inclusive
+    Higgs boson rapidity, are not used in our default, recommended,
+    reweighting procedure. The inclusive rapidity spectrum is the
+    first histogram appearing in the output {\tt{.top}} file and is
+    titled simply {\tt{`yh'}}. The histogram range has been set to
+    $-5<y<5$ and the bin width is 0.1. These values may be altered by
+    the user as desired, by editing the relevant {\tt{bookplot}}
+    subroutine call. However, in this case one must take care to
+    modify the relevant \POWHEGBOX{} analysis file used by the
+    reweighting code, under the {\tt{HJ/NNLOPS}} directory, in the
+    same way (either {\tt{pwhg\_analysis-release.f}} or
+    {\tt{pwhg\_analysis-pheno\_2.f}}).
+  \end{itemize}
+
+\item {\tt{setup.f}}
+  \begin{itemize}
+  \item This file was modified to set \HNNLO{} to fill histograms with the
+    relevant Higgs decay branching fractions divided out:
+    {\tt{removebr=.true.}}. Thus the integral of the Higgs boson rapidity
+    spectrum histogram output is the total cross section. This is required
+    for consistency with the \HJMINLO{} program and its analysis, in order
+    to carry out the NNLO reweighting.
+  \end{itemize}
+
+\item {\tt{writeinfo.f}}
+  \begin{itemize}
+  \item Originally the {\tt{writeinfo}} subroutine in this file copied
+    the contents of the input file used in running the program, plus the
+    cross section, as a series of comments to the top of the histogram
+    output file. In order to have a simple uniform format for \HJMINLO{}
+    and \HNNLO{} we removed these comments (the bulk of which was simply
+    a copy of the input file used to run the program).
+  \end{itemize}
+
+\end{itemize}
+
+\subsection{\HJMINLO{}\label{sec:HJMINLO}}
+
+\begin{itemize}
+
+\item {\tt{init\_couplings.f}}
+  \begin{itemize}
+  \item This file contains the values of numerous physical constants in
+    \HJMINLO{}.
+  \end{itemize}
+
+\item {\tt{powheg.input}}/{\tt{powheg.input-save}}
+  \begin{itemize}
+  \item Here the Higgs boson mass and
+    width should be set consistently with the values used by \HNNLO{} in
+    the \HJMINLO{} input file ({\tt{hmass}} and {\tt{hwidth}} parameters).
+    Also, the mass window on the off-shell mass range for the Higgs boson
+    (the Breit-Wigner generation cut-off) should be set to a large value
+    (in ref.~\cite{Hamilton:2013fea} we have set {\tt{bwcutoff 1000}}).
+    Lastly, again for consistency with the running of \HNNLO{} we require
+    that the Higgs boson be left undecayed at the Les Houches event level,
+    this is achieved by setting {\tt{hdecaymode -1}} in the relevant
+    \HJMINLO{} input file.
+  \end{itemize}
+
+\end{itemize}
+
+\subsection{NNLO reweighting\label{sec:HNNLO code}}
+
+\begin{itemize}
+  
+\item {\tt{Makefile}}
+  \begin{itemize}
+  \item The default value for the {\tt ANALYSIS} variable should be
+    {\tt release}. Other options are described below, but they are
+    intended mainly for debugging purposes or developers. \FASTJET{}
+    must be linked properly too, and as usual it is recommended to let
+    the {\tt Makefile} call the {\tt fastjet-config} command.
+  \end{itemize}
+  
+\item {\tt{minnlo.f}}
+  \begin{itemize}
+  \item This file contains the main program to perform the NLO-to-NNLO
+    reweighting. Some parameters useful for debugging purposes can be
+    found here, as described in the commented section at the beginning
+    of the file. However, the user is recommended not to change them.
+  \end{itemize}
+  
+\item {{\tt opencount.f}, {\tt auxiliary.f}, {\tt lhef\_readwrite.f},
+    {\tt get\_hdamp.f}, {\tt genclust\_kt.f}, \\ 
+   {\tt swapjet.f},
+    {\tt miscclust.f}, {\tt ptyrap.f}, {\tt r.f}}
+  \begin{itemize}
+  \item These files contain several functions and routines needed by
+    {\tt minnlo.f} and/or by the analysis subroutine used to process
+    the \HJMINLO{} LH file and compute
+    $d\sigma_{A/B}^{{\scriptscriptstyle
+        \mathrm{MINLO}}}\,\delta\left(y-y\left(\Phi\right)\right)$.
+  
+  ({\tt jetlabel.f}, {\tt jetcuts.f}, {\tt mxpart.f} and {\tt npart.f}
+  contain common blocks used in the source files.)
+\end{itemize}
+
+\item {{\tt pwhg\_analysis-release.f}, {\tt jet\_finder-release.f}}
+  \begin{itemize}
+  \item These files contain the minimal analysis needed to extract
+    $d\sigma_{A/B}^{{\scriptscriptstyle
+        \mathrm{MINLO}}}\,\delta\left(y-y\left(\Phi\right)\right)$
+  from the LH input file. They are compiled if {\tt ANALYSIS=release}
+  is set, which is the default option.
+\end{itemize}
+
+\item {{\tt pwhg\_analysis-pheno\_2.f}, {\tt jet\_finder.f}}
+  \begin{itemize}
+  \item These files are compiled when {\tt ANALYSIS=pheno\_2}.
+    Although they extend the '{\tt release}' analysis, allowing to
+    plot more distributions, the LH file obtained by running the {\tt
+      minnlo} reweighter is identical to that obtained with the
+    previously-described files. The '{\tt pheno\_2}' analysis was used
+    to produce the plots in ref.~\cite{Hamilton:2013fea}.
+  \end{itemize}
+  
+\item {{\tt pwhg\_analysis-pheno.f}, {\tt pwhg\_analysis-HNNLO.f}}
+  \begin{itemize}
+  \item These files are kept for backward-compatibility reasons.
+  \end{itemize}
+  
+\end{itemize}
+
+\bibliographystyle{JHEP}
+\bibliography{hnnlops}
+
+
+\end{document}

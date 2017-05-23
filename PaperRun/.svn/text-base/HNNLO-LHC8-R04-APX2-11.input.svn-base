@@ -1,0 +1,17 @@
+8000   ! sroot
+1 1  ! ih1 ih2
+125.5   ! hmass (hnnlo then gives Gamma_H = 0.004221 GeV)
+62.750 62.750 ! mur,muf
+2               ! order
+1               ! higgsdec
+'tota'          ! part
+15 5000000  ! itmx1, ncall1
+30 7000000  ! itmx2, ncall2
+10103 ! rseed
+92 0            ! iset, nset
+172.5d0         ! mtop
+4.75d0          ! mbot
+2               ! approxim
+'MSTW2008nnlo68cl.LHgrid' 0  ! set, member (LHAPDFs)
+'HNNLO-LHC8-R04-APX2-11-10103' ! runstring
+Cross section is 19027.493 +/- 99.560 fb
