@@ -1,0 +1,59 @@
+! main31.cmnd.
+! This file contains commands to be read in for a Pythia8 run. 
+! Lines not beginning with a letter or digit are comments.
+! Names are case-insensitive  -  but spellings-sensitive!
+! The settings here are illustrative, not always physics-motivated.
+! You should carefully consider what changes need be done for the 
+! process you study currently, and consider some of the options
+! as reasonable measures of uncertainties in the matching process.
+
+! Initialisation settings - have turned everything off because I'm not
+! using it - can turn them back on later
+Init:showProcesses = off   ! print a list of processes to be simulated
+Init:showMultipartonInteractions = off ! print MPI
+Init:showChangedSettings = off
+Init:showAllSettings = off
+Init:showChangedParticleData = off
+Init:showChangedResonanceData = off
+Init:showAllParticleData = off
+Init:showOneParticleData = 0
+
+! Event-generation settings
+Next:numberShowLHA = 0
+Next:numberShowInfo= 0
+Next:numberShowProcess = 0
+Next:numberShowEvent   = 0
+!Main:timesAllowErrors = 10
+
+! Parton level settings (i.e. evolution from hard process to hadronisation scale)
+PartonLevel:all   = on    ! evolve from parton level to Hadron level
+PartonLevel:ISR   = on    ! Initial state radiation
+PartonLevel:FSR   = on    ! Final state radiation
+PartonLevel:MPI   = off    ! Multiple parton interactions
+
+! Shower settings
+SpaceShower:pTmaxMatch=2  ! Power shower on
+TimeShower:pTmaxMatch=2   ! Power shower on
+SpaceShower:QEDshowerByQ = off
+SpaceShower:QEDshowerByL = off
+TimeShower:QEDshowerByQ = off
+TimeShower:QEDshowerByL = off
+POWHEG:veto = 1           ! Do veto emissions
+POWHEG:pTdef = 1          ! See 1608.03577 - this seems to be the sensible setting, also PYTHIA website
+POWHEG:pTemt = 0	  ! Same, this is the ONLY sensible setting
+POWHEG:pThard= 2          ! standard setting on pythia8 website
+
+
+! Hadron level settings
+HadronLevel:all   = off    ! Do hadron level stage
+!HadronLevel:Hadronize=on
+!HadronLevel:Decay = on    ! Decay heavy particles
+
+! Other settings
+BeamRemnants:primordialKT = on
+Tune:pp = 14
+111:mayDecay = off
+25:mayDecay = off            ! Important - higgs should be stable!
+
+
+

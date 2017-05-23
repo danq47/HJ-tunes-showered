@@ -179,6 +179,11 @@ p.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
 endif
 
 
+PYTHIA8LOCATION=/unix/theory/quill/POWHEG-RES-INSTALL/pythia8185
+FJCXXFLAGS+=-I$(PYTHIA8LOCATION)/include
+FJCXXFLAGS+=-I$(PYTHIA8LOCATION)/include/Pythia8
+LIBPYTHIA8=-L$(PYTHIA8LOCATION)/lib/archive -lpythia8 -lstdc++
+
 %.o: %.f $(INCLUDE)
 	$(FF) -c -o $(OBJ)/$@ $<
 
@@ -262,6 +267,17 @@ PYTHIA=main-PYTHIA.o setup-PYTHIA-lhef.o pythia.o boostrot.o powheginput.o		\
 
 main-PYTHIA-lhef: $(PYTHIA)
 	$(FF) $(patsubst %,$(OBJ)/%,$(PYTHIA)) $(LIBSFASTJET)  $(STATIC) -o $@
+
+# target to read event file, shower events with PYTHIA8 + analysis                                                                                      
+PYTHIA8_31=main-PYTHIA8_31.o pythia8F77_31.o boostrot.o powheginput.o           \
+        $(PWHGANAL) lhefread.o newunit.o pwhg_io_interface.o rwl_weightlists.o   \
+        pwhg_analysis_driver.o random.o cernroutines.o opencount.o bra_ket_subroutines.o        \
+        $(FPEOBJ)
+
+main-PYTHIA8_31-lhef: $(PYTHIA8_31)
+	$(FF) $(patsubst %,$(OBJ)/%,$(PYTHIA8_31)) $(LIBSFASTJET) $(LIBPYTHIA8) $(LIBS) $(STATIC) -o $@
+
+
 
 
 DELTASUD=integral-deltasud.o pdfcalls.o cernroutines.o newunit.o \
