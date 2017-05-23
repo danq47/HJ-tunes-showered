@@ -348,7 +348,7 @@ public:
     for (int i = e.size() - 1; i > 0; i--) {  //ER: i>5; it was i>0 , but it'd use w entry too...
       //      cout<<"all: "<<i<<" "<<e[i].id()<<" "<<e[i].px()<<endl;
       //      if (e[i].isFinal()) {
-      if ( (e[i].isFinal()) && (abs(e[i].id()) <= 5 || abs(e[i].id()) == 21) ) { //ER: this will work
+      if ( (e[i].isFinal()) && (abs(e[i].id()) <= 5 || abs(e[i].id()) == 21 || abs(e[i].id()) == 25 ) ) { //ER: this will work
         count++;
 	//	cout<<"final: "<<i<<" "<<e[i].id()<<" "<<e[i].px()<<endl;
 	//	cout<<"final: "<<i<<" "<<e[i].e()<<endl;
@@ -777,7 +777,7 @@ extern "C" {
 			 int  (*jmohep)[2], int (*jdahep)[2],
 			 double (*phep)[5], double (*vhep)[4]) {
     nhep = pythia.event.size();
-    if(nhep>nmxhep) {cout << "too many particles!" ; exit(-1); }
+    if(nhep>nmxhep) {cout << "too many particles (" << nhep << "), max is " << nmxhep << "!"<<endl ;/* exit(-1);*/ }
     for (int i = 0; i < pythia.event.size(); ++i) {
       *(isthep+i) = pythia.event.statusHepMC(i);
       *(idhep+i) = pythia.event[i].id();
