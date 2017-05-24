@@ -1,0 +1,98 @@
+###########################################################################
+#!/bin/bash
+###########################################################################
+#
+#PBS -A quill
+
+
+#PBS -l nodes=1:ppn=4
+###PBS -l procs=4
+#PBS -q medium
+#
+###########################################################################
+#
+nScripts=15
+scriptNumber=1
+nJobs=4
+startSeed=$(((nJobs*(scriptNumber-1))+1))
+endSeed=$((startSeed+nJobs-1))
+###########################################################################
+#
+echo -e "\nJob running parameters:\n"
+echo -e "nJobs = $nJobs"
+echo -e "Starting seed = $startSeed"
+echo -e "Ending seed   = $endSeed  "
+###########################################################################
+# Get the name of the directory we're submitting this script from.
+basedir=$PBS_O_WORKDIR
+# Tell the current worker node to go into it.
+cd $basedir
+#
+###########################################################################
+if [ $scriptNumber -eq 1 ] ; then
+mkdir -p  technical-outputs
+mkdir -p  log-files
+mkdir -p  Timings
+mkdir -p combined-output
+mkdir -p NLO-output
+mkdir -p pwhgalone-output
+mkdir -p LHEF-output
+mkdir -p PYTHIA8-output
+> Timings/Timings-initialisation.txt
+(echo -n ' ' ) >> Timings/Timings-initialisation.txt	
+(echo -n Starting st1 xg1 ' ' ; date ) >> Timings/Timings-initialisation.txt
+fi
+###########################################################################
+# Check we have executables and a powheg.input-save input file.
+if [ ! -e pwhg_main ] ; then
+    echo ; echo "Could not find $PWD/pwhg_main executable. Quitting." ; echo
+    exit
+fi
+if [ ! -e powheg.input-save ] ; then
+    echo ; echo "Could not find $PWD/powheg.input-save input file. Quitting." ; echo
+    exit
+fi
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#                            do xgrids 1                                  #
+#                                                                         #
+###########################################################################
+###########################################################################
+#
+
+mkdir xg1-$scriptNumber
+cd xg1-$scriptNumber
+cp ../pwhg_main .
+cp ../powheg.input-save .
+cp ../pwgseeds.dat .
+
+cat powheg.input-save | sed "s/xgriditeration.*/xgriditeration 1/ ; s/parallelstage.*/parallelstage 1/" > powheg.input
+
+for i in `seq $startSeed $endSeed`
+do
+echo $i | ./pwhg_main > run-st1-xg1-$i.log 2>&1 &
+done
+wait
+	
+for i in `ls *.dat *.top *.log` ; do
+if [ -e ../$i ] ; then
+   echo "File $i exists in base directory, not copying"
+else
+    echo "Copying $i to base directory";
+    cp $i $basedir
+fi
+done
+ 
+cd $basedir
+rm -rf xg1-$scriptNumber
+
+if [ $scriptNumber -eq $nScripts ] ; then
+
+(echo -n ' ' ) >> Timings/Timings-initialisation.txt
+(echo -n Ending   st1 xg1 ' ' ; date ) >> Timings/Timings-initialisation.txt
+
+fi
+
+

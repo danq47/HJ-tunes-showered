@@ -1,0 +1,129 @@
+###########################################################################
+#!/bin/bash
+###########################################################################
+#
+#PBS -A quill
+
+
+#PBS -l nodes=1:ppn=4
+
+###PBS -l procs=4
+#PBS -q medium
+#
+###########################################################################
+#
+nScripts=15
+scriptNumber=1
+nJobs=4
+startSeed=$(( ( nJobs*(scriptNumber-1) ) + 1 ))
+endSeed=$((startSeed+nJobs-1))
+maxBigLoops=1
+do_st1=1
+do_st2=1
+do_NLOplots=1
+do_st3=1
+do_st4=0
+do_rwgt=0
+do_lhef=0
+do_py6=0
+do_py8=0
+
+
+###########################################################################
+# Get the name of the directory we're submitting this script from.
+basedir=$PBS_O_WORKDIR
+# Tell the current worker node to go into it.
+cd $basedir
+#
+# Check we have executables and a powheg.input-save input file.
+if [ ! -e pwhg_main ] ; then
+    echo ; echo "Could not find $PWD/pwhg_main executable. Quitting." ; echo
+    exit
+fi
+if [ ! -e powheg.input-save ] ; then
+    echo ; echo "Could not find $PWD/powheg.input-save input file. Quitting." ; echo
+    exit
+fi
+#
+###########################################################################
+#
+# Timing
+#
+###########################################################################
+if [ $scriptNumber -eq 1 ] ; then
+        (echo -n ' ' ) >> Timings/Timings-initialisation.txt
+        (echo -n Starting st2 ' ' ; date ) >> Timings/Timings-initialisation.txt
+fi
+###########################################################################
+# Tidy up
+###########################################################################
+
+if [ $scriptNumber -eq 1 ] ; then
+mv pwgcounters-st1-*.dat    technical-outputs/
+mv pwg-xg1-*-btlgrid.top    technical-outputs/
+mv pwg-xg1-*-rmngrid.top    technical-outputs
+mv FlavRegList realequiv realequivregions virtequiv bornequiv technical-outputs/
+mv pwgborngrid.top pwghistnorms.top pwhg_checklimits          technical-outputs/
+mv pwggridinfo-btl-xg1-*.dat technical-outputs/
+mv pwggridinfo-rmn-xg1-*.dat technical-outputs
+mv run-st1-xg*.log           log-files/
+mkdir -p bad_st1_files
+mv *bad-xg* bad_st1_files
+fi
+###########################################################################
+###########################################################################
+#                                                                         #
+#        NLO integration and determination of Btilde upper bound          #
+#                                                                         #
+###########################################################################
+###########################################################################
+
+mkdir st2-$scriptNumber
+cd st2-$scriptNumber
+cp ../pwhg_main .
+cp ../*.dat .
+cp ../powheg.input-save .
+cp ../*.top .
+
+if [ $do_NLOplots -eq 1 ] ; then
+   cat powheg.input-save | sed 's/parallelstage.*/parallelstage 2/ ; s/testplots.*/testplots 1/' > powheg.input
+else
+   cat powheg.input-save | sed 's/parallelstage.*/parallelstage 2/ ; s/testplots.*/testplots 0/' > powheg.input
+fi
+
+for i in `seq $startSeed $endSeed`
+do
+echo $i | ./pwhg_main > run-st2-$i.log 2>&1 &
+done
+wait
+
+for i in `ls pwg-*NLO.top` ; do
+if [ -e $basedir/NLO-output/$i ] ; then
+   echo "ERROR - NLO top file already exists?"
+else
+   echo "\nCopying $i to NLO-output/";
+   cp $i $basedir/NLO-output
+fi
+done
+
+rm pwg-*NLO.top
+
+for i in `ls *.dat *.log *.top` ; do
+if [ -e ../$i ] ; then
+   echo "File $i exists in base directory, not copying"
+else
+    echo "Copying $i to base directory";
+    cp $i $basedir
+fi
+done
+
+cd $basedir
+rm -rf st2-$scriptNumber
+
+if [ $scriptNumber -eq $nScripts ] ; then
+	(echo -n Ending   st2 ' ' ; date ) >> Timings/Timings-initialisation.txt
+fi
+#
+
+
+
