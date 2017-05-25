@@ -1,0 +1,391 @@
+###########################################################################
+#!/bin/bash
+###########################################################################
+#
+#PBS -A quill
+
+
+#PBS -l nodes=1:ppn=4
+
+###PBS -l procs=4
+#PBS -q long
+#
+###########################################################################
+#
+nScripts=15
+scriptNumber=1
+nJobs=4
+startSeed=$(( ( nJobs*(scriptNumber-1) ) + 1 ))
+endSeed=$((startSeed+nJobs-1))
+maxBigLoops=1
+do_st1=0
+do_st2=0
+do_NLOplots=0
+do_st3=0
+do_st4=1
+do_rwgt=1
+do_lhef=1
+do_py6=0
+do_py8=1
+#
+
+###########################################################################
+#
+echo -e "\nJob running parameters:\n"
+echo -e "nJobs = $nJobs"
+echo -e "Starting seed = $startSeed"
+echo -e "Ending seed   = $endSeed  "
+###########################################################################
+# Get the name of the directory we're submitting this script from.
+basedir=$PBS_O_WORKDIR
+# Tell the current worker node to go into it.
+cd $basedir
+#
+###########################################################################
+# Check we have executables and a powheg.input-save input file.
+if [ ! -e pwhg_main ] ; then
+    echo ; echo "Could not find $PWD/pwhg_main executable. Quitting." ; echo
+    exit
+fi
+if [ ! -e powheg.input-save ] ; then
+    echo ; echo "Could not find $PWD/powheg.input-save input file. Quitting." ; echo
+    exit
+fi
+#
+############################################################################
+# 
+#   DO st4 (event generation)
+#
+#############################################################################
+###########################################################################
+# Start a file to track how long things take.
+> Timings/Timings-$scriptNumber.txt
+#
+###########################################################################
+# Tidy up
+mv pwgcounters-st3-*.dat    technical-outputs/
+mv pwg-st3-*-stat.dat       technical-outputs/
+mv FlavRegList realequiv realequivregions virtequiv bornequiv technical-outputs/
+mv pwgborngrid.top pwghistnorms.top pwhg_checklimits          technical-outputs/
+mv run-st3-*.log            log-files/
+mv pwg-[0-9][0-9][0-9][0-9]-stat.dat   technical-outputs/
+mv pwg-[0-9][0-9][0-9][0-9]-*grid.top  technical-outputs/
+###########################################################################
+###########################################################################
+#                                                                         #
+#                   Define helper function for later                      #
+#                                                                         #
+###########################################################################
+###########################################################################
+# Define auxiliary helper function
+function char {
+        case $1 in
+            [1-9])           			echo 000$1 ;;
+            [1-9][0-9])      			echo 00$1  ;;
+            [1-9][0-9][0-9]) 			echo 0$1   ;;
+				[1-9][0-9][0-9][0-9]) 	echo $1    ;;
+        esac
+}
+###########################################################################
+###########################################################################
+#                                                                         #
+#  Initiate BIG LOOP over generation of events, reweighting and analysis  #
+#                                                                         #
+###########################################################################
+###########################################################################
+#
+#
+#
+#
+for BigLoop in `seq 1 $maxBigLoops`
+do
+#
+#
+#
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#                     Generate Les Houches events                         #
+#                                                                         #
+###########################################################################
+###########################################################################
+if [ $do_st4 -eq 1 ] ; then
+# remove the tmp/kh-$scriptNumber-`basename $basedir`/ folder if it exists
+rm -rf /tmp/kh-$scriptNumber-`basename $basedir`/
+mkdir /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/*.dat             /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/powheg.input      /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/powheg.input-save /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/pwhg_main         /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/lhef_analysis     /tmp/kh-$scriptNumber-`basename $basedir`/
+#cp $basedir/main-PYTHIA-lhef  /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/main-PYTHIA8_31-lhef /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/main31.cmnd /tmp/kh-$scriptNumber-`basename $basedir`/
+cp $basedir/mergedata         /tmp/kh-$scriptNumber-`basename $basedir`/
+cd /tmp/kh-$scriptNumber-`basename $basedir`/
+#
+cat powheg.input-save | sed 's/parallelstage.*/parallelstage 4/' > powheg.input
+(echo -n ' ' ) >> $basedir/Timings/Timings-$scriptNumber.txt
+(echo -n Started  st4  BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+for i in `seq $startSeed $endSeed`
+do
+    ch=`char $i`
+    echo $i | ./pwhg_main > run-st4-$ch.log 2>&1 &
+done
+wait
+#
+###########################################################################
+# Tidy up
+mv pwgcounters-st4-*.dat    $basedir/technical-outputs/
+mv pwgboundviolations-*.dat $basedir/technical-outputs/
+mv FlavRegList realequiv realequivregions virtequiv bornequiv \
+   $basedir/technical-outputs/
+mv pwgborngrid.top pwghistnorms.top pwhg_checklimits          \
+   $basedir/technical-outputs/
+mv run-st4-*.log            $basedir/log-files/
+mv pwg-[0-9][0-9][0-9][0-9]-stat.dat   $basedir/technical-outputs/
+mv pwg-[0-9][0-9][0-9][0-9]-*grid.top  $basedir/technical-outputs/
+pwhgaloneFilesToCombine=`ls *pwhgalone-output[0-9][0-9][0-9][0-9].top`
+mv  $pwhgaloneFilesToCombine $basedir/pwhgalone-output
+(echo -n Finished st4  BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+################################################################################
+################################################################################
+#                                                                              #
+# Add 49 point scale variation to event files by reweighting (new reweighting) #
+#                                                                              #
+################################################################################
+################################################################################
+
+if [ $do_rwgt -eq 1 ] ; then
+#
+# Now all events are available. This is an example of using the reweighting
+# feature. We compute reweighting information for the 7 points scale variation
+#
+(echo -n ' ' ) >> $basedir/Timings.txt
+(echo -n Started  rwgt BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings.txt
+
+# First choose the POWHEG scales, we will have a separate weights group for each set of scales
+for pwg_scales in {1..7}
+do
+    case $pwg_scales in
+        1) facscfact=1.0 ; renscfact=1.0 ;;
+        2) facscfact=0.5 ; renscfact=0.5 ;;
+        3) facscfact=0.5 ; renscfact=1.0 ;;
+        4) facscfact=1.0 ; renscfact=0.5 ;;
+        5) facscfact=2.0 ; renscfact=1.0 ;;
+        6) facscfact=1.0 ; renscfact=2.0 ;;
+        7) facscfact=2.0 ; renscfact=2.0 ;;
+    esac
+
+# Turn on "tunes"
+    cat  powheg.input-save | sed "s/parallelstage.*/parallelstage 4/ ; s/storeinfo_rwgt/compute_rwgt/ ; s/tunes.*/tunes 1/ " > powheg.input
+    sed -i "s/facscfact .*/facscfact $facscfact/g" powheg.input
+    sed -i "s/renscfact .*/renscfact $renscfact/g" powheg.input
+    sed -i "s/lhrwgt_group_name .*/lhrwgt_group_name \'tunes reweight with POWHEG scales muR = $renscfact, muF = $facscfact\'/g" powheg.input
+
+# Next, choose the MRT scales. Each set of POWHEG scale choices will have 7 MRT scale choices in the group
+    for mrt_scales in {1..7}
+    do
+    	case $mrt_scales in
+    		1) facsc_fact_mrt=1.0 ; rensc_fact_mrt=1.0 ;;
+			2) facsc_fact_mrt=0.5 ; rensc_fact_mrt=0.5 ;;
+			3) facsc_fact_mrt=0.5 ; rensc_fact_mrt=1.0 ;;
+			4) facsc_fact_mrt=1.0 ; rensc_fact_mrt=0.5 ;;
+			5) facsc_fact_mrt=2.0 ; rensc_fact_mrt=1.0 ;;
+			6) facsc_fact_mrt=1.0 ; rensc_fact_mrt=2.0 ;;
+			7) facsc_fact_mrt=2.0 ; rensc_fact_mrt=2.0 ;;
+		esac
+
+		sed -i "s/facsc_fact_mrt.*/facsc_fact_mrt $facsc_fact_mrt/g" powheg.input
+		sed -i "s/rensc_fact_mrt.*/rensc_fact_mrt $rensc_fact_mrt/g" powheg.input
+		sed -i "s/lhrwgt_id.*/lhrwgt_id \'muR_pwg = $renscfact, muF_pwg = $facscfact, muR_mrt = $rensc_fact_mrt, muF_mrt = $facsc_fact_mrt\'/g" powheg.input
+        sed -i "s/lhrwgt_dscr.*/lhrwgt_dscr \'tunes reweighted with KRp=$renscfact,KFp=$facscfact,KRr=$rensc_fact_mrt,KFr=$facsc_fact_mrt\'/g" powheg.input
+    	
+		for i in `seq $startSeed $endSeed`
+    		do
+			ch=`char $i`
+
+        		./pwhg_main <<EOF > run-rwgt-$i.log 2>&1 &
+$i
+pwgevents-$ch.lhe
+pwgevents-$ch.lhe
+EOF
+            
+		done
+
+    		wait
+        
+		for i in `seq $startSeed $endSeed`
+   		do
+			ch=`char $i`
+        		\mv -f pwgevents-rwgt-$ch.lhe pwgevents-$ch.lhe 
+        
+		done
+	done
+done
+    
+
+mv run-rwgt-*.log $basedir/log-files/
+(echo -n Finished rwgt BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+#
+fi
+
+
+
+###########################################################################
+###########################################################################
+#                                                                         #
+#                            TAR UP EVENT FILES                           #
+#                   AND SEND BACK BEFORE ANYTHING GOES WRONG              #
+#                                                                         #
+###########################################################################
+###########################################################################
+# Compress the event files to save space.
+#
+(echo -n Started tarring up files, BigLoop is $BigLoop ' ' ; date ) >> Timings/Timings-$scriptNumber.txt
+filesToCopy=""
+for i in *.lhe
+do 
+    filesToCopy=$filesToCopy" "$i.tar.gz
+    tar -czf $i.tar.gz $i &
+done
+wait
+cp $filesToCopy $basedir/
+rm $filesToCopy
+(echo -n Finished tarring up files, BigLoop is $BigLoop ' ' ; date ) >> Timings/Timings-$scriptNumber.txt
+#
+# Don't need these files anymore for lhef_analysis etc, so remove
+# we remove them to keep space
+rm /tmp/kh-$scriptNumber-`basename $basedir`/*.dat
+rm /tmp/kh-$scriptNumber-`basename $basedir`/powheg.input
+rm /tmp/kh-$scriptNumber-`basename $basedir`/pwhg_main
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#                    Analyse events with lhef_analysis                    #
+#                                                                         #
+###########################################################################
+###########################################################################
+if [ $do_lhef -eq 1 ] ; then
+#
+(echo -n ' ' ) >> $basedir/Timings/Timings-$scriptNumber.txt
+(echo -n Started  lhef BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+cp powheg.input-save powheg.input
+for i in `seq $startSeed $endSeed`
+do
+    ch=`char $i`
+    file=pwgevents-$ch.lhe
+    log=lhef_analysis-$ch.log
+    echo $file | ./lhef_analysis > $log &
+done
+wait
+mv pwgLHEF*.top $basedir/LHEF-output
+mv lhef_analysis-*.log $basedir/log-files/
+(echo -n Finished lhef BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+#
+fi
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#                Analyse events with main-PYTHIA8_31-lhef                 #
+#                                                                         #
+###########################################################################
+###########################################################################
+if [ $do_py8 -eq 1 ] ; then
+#
+(echo -n ' ' ) >> $basedir/Timings/Timings-$scriptNumber.txt
+(echo -n Started  Py8  BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+cp powheg.input-save powheg.input
+for i in `seq $startSeed $endSeed`
+do
+    ch=`char $i`
+    file=pwgevents-$ch.lhe
+    log=main-PYTHIA8_31-lhef-$i.log
+    echo $file | ./main-PYTHIA8_31-lhef > $log &
+done
+wait
+
+
+mv pwgPOWHEG+PYTHIA8*top $basedir/PYTHIA8-output
+mv main-PYTHIA8_31-lhef-*.log $basedir/log-files/
+(echo -n Finished Py8  BigLoop is $BigLoop ' ' ; date ) >> $basedir/Timings/Timings-$scriptNumber.txt
+#
+fi
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#               Clean up before next cycle of BigLoop                     #
+#                                                                         #
+###########################################################################
+###########################################################################
+#
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/*.dat
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/powheg.input
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/powheg.input-save
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/pwhg_main
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/lhef_analysis
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/main-PYTHIA-lhef
+rm -f /tmp/kh-$scriptNumber-`basename $basedir`/main-PYTHIA8_31-lhef
+cd /tmp
+rm -rf /tmp/kh-$scriptNumber-`basename $basedir`
+cd $basedir
+#
+fi   # End of if [ $do_st4  -eq 1 ] block
+#
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#   End of BigLoop over generation of events, reweighting and analysis    #
+#                                                                         #
+###########################################################################
+###########################################################################
+#
+# To restart now from the event generation phase we should remove any
+# .lhe that are lying around to avoid disk issues. Previous .lhe.tar.gz
+# are a factor 5 smaller than .lhe so we leave them where they are safely.
+# There shouldn't be any .lhe, only .lhe.tar.gz, but to be on the safe
+# side we delete them
+rm *.lhe
+# Then we have to take care to shift the starting and ending seeds up so
+# they don't overlap the ones we already ran with, to avoid generating
+# identical events over again.
+
+#startSeed=$((endSeed+1))
+
+# DQ - now that we have nScripts, we need to offset the
+# startSeed so we don't overlap with other scripts
+startSeed=$((startSeed+(nJobs*nScripts)))
+endSeed=$((startSeed+nJobs-1))
+#
+done
+#
+#
+#
+#
+###########################################################################
+###########################################################################
+#                                                                         #
+#                             **** THE END ****                           #
+#                                                                         #
+###########################################################################
+###########################################################################
+#
+#
+#
+#
+#
+#
+#
+exit
+exit
+exit
+exit
+exit
+exit
+exit
+#

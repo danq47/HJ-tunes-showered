@@ -3,6 +3,7 @@ do_st2=1
 do_NLOplots=1
 do_st3=1
 do_st4=1
+do_tunes_reweight=1
 do_LHEF=1 # Can't do analysis on it's own yet, will add this at a later date
 do_P8=1   # For now we can only do P8 and LHEF if we also do st4
 
@@ -127,7 +128,11 @@ fi
 if [ $do_st4 -eq 1 ] ; then
     ST4=""
     for i in `seq 1 $numScripts` ; do
-	cp ../scripts/st4.pbs `basename $PWD`-st4-$i.pbs
+	if [ $do_tunes_reweight -eq 1 ] ; then
+	    cp ../scripts/st4-tunes.pbs `basename $PWD`-st4-$i.pbs
+	else
+	    cp ../scripts/st4.pbs `basename $PWD`-st4-$i.pbs
+	fi
 
 # Check if we need to do LHEF/P8 showering
         if [ $do_LHEF -eq 1 ] ; then
@@ -162,6 +167,6 @@ if [ $do_st4 -eq 1 ] ; then
 	    fi
         fi
     done
-
+fi
 
 
