@@ -1,0 +1,189 @@
+###########################################################################
+#!/bin/bash
+###########################################################################
+#
+#PBS -A quill
+
+
+#PBS -l nodes=1:ppn=4
+###PBS -l procs=4
+#PBS -q short
+#
+###########################################################################
+#
+nScripts=15
+scriptNumber=1
+nJobs=4
+maxBigLoops=1
+startSeed=$(((nJobs*(scriptNumber-1))+1))
+endSeed=$((startSeed+nJobs-1))
+do_lhef=1
+do_py8=1
+###########################################################################
+#
+echo -e "\nJob running parameters:\n"
+echo -e "nJobs = $nJobs"
+echo -e "Starting seed = $startSeed"
+echo -e "Ending seed   = $endSeed  "
+###########################################################################
+# Get the name of the directory we're submitting this script from.
+basedir=$PBS_O_WORKDIR
+# Tell the current worker node to go into it.
+cd $basedir
+if [ ! -e log-files ] ; then
+    mkdir log-files
+fi
+#
+
+###########################################################################
+#
+# start the big loop
+# 
+###########################################################################
+#
+
+for BigLoop in `seq 1 $maxBigLoops` ; do
+
+###########################################################################
+#
+# LHEF analysis
+#
+###########################################################################
+    if [ $do_lhef -eq 1 ] ; then
+        if [ $scriptNumber -eq 1 ] ; then
+            > Timings/Timings-LHEF-analysis.txt
+            (echo -n ' ' ) >> Timings/Timings-LHEF-analysis.txt    
+            (echo -n Starting LHEF analysis ' ' ; date ) >> Timings/Timings-LHEF-analysis.txt
+        fi
+
+        if [ ! -e lhef_analysis ] ; then
+            echo ""
+            echo "Cannot find lhef_analysis executable: Quitting."
+            echo ""
+            exit
+        fi
+
+	if [ ! -e powheg.input-save ] ; then
+	   echo
+	   echo "Cannot find powheg.input-save file: Quitting."
+	   echo
+	   exit
+	fi
+
+	if [ -e lhef-analysis-$scriptNumber ] ; then
+	   rm -rf lhef-analysis-$scriptNumber
+	fi	
+
+        mkdir lhef-analysis-$scriptNumber
+        cd lhef-analysis-$scriptNumber
+
+        cp ../lhef_analysis .
+	cp ../powheg.input-save powheg.input
+        for i in `seq $startSeed $endSeed` ; do
+            file=`sed -n $i'p' ../events | sed "s/\.tar\.gz//g"`
+            if [ ! "$file" = "" ] ; then
+                cp ../$file.tar.gz .
+                tar -xzvf $file.tar.gz
+                log=lhef_analysis-$file.log
+                echo $file | ./lhef_analysis >> $log &
+            fi
+        done
+        wait
+	
+	topFiles=`ls *.top`
+	if [ ! "$topFiles" = "" ] ; then
+           mv *.top $basedir/LHEF-output
+           mv *.log $basedir/log-files
+	fi
+
+        cd $basedir
+        rm -rf lhef-analysis-$scriptNumber
+
+        if [ $scriptNumber -eq $nScripts ] ; then
+
+            (echo -n ' ' ) >> Timings/Timings-LHEF-analysis.txt
+            (echo -n Ending   LHEF analysis ' ' ; date ) >> Timings/Timings-LHEF-analysis.txt
+
+        fi
+    fi
+
+###########################################################################
+#
+# PYTHIA8 analysis
+#
+###########################################################################
+    if [ $do_py8 -eq 1 ] ; then
+
+        if [ $scriptNumber -eq 1 ] ; then
+            > Timings/Timings-P8-analysis.txt
+            (echo -n ' ' ) >> Timings/Timings-P8-analysis.txt    
+            (echo -n Starting P8 analysis ' ' ; date ) >> Timings/Timings-P8-analysis.txt
+        fi
+
+        if [ ! -e main31.cmnd ] || [ ! -e main-PYTHIA8_31-lhef ]; then
+            echo ""
+            echo "Cannot find main-PYTHIA8_31-lhef executable or cmnd file: Quitting."
+            echo ""
+            exit
+        fi
+
+	if [ ! -e powheg.input-save ] ; then
+	   echo
+	   echo "Cannot find powheg.input-save file: Quitting."
+	   echo
+	fi
+
+        if [ -e p8-analysis-$scriptNumber ] ; then
+            rm -rf p8-analysis-$scriptNumber
+        fi
+
+        mkdir p8-analysis-$scriptNumber
+        cd p8-analysis-$scriptNumber
+
+        cp ../main-PYTHIA8_31-lhef .
+        cp ../main31.cmnd .
+	cp ../powheg.input-save powheg.input        
+	for i in `seq $startSeed $endSeed` ; do
+            file=`sed -n $i'p' ../events | sed "s/\.tar\.gz//g"`
+            if [ ! "$file" = "" ] ; then # check to see that file exists, so we don't get loads of errors
+                cp ../$file.tar.gz .
+                tar -xzvf $file.tar.gz
+                log=p8_analysis-$file.log
+                echo $file | ./main-PYTHIA8_31-lhef >> $log &
+            fi
+        done
+        wait
+
+	topFiles=`ls *.top`
+	if [ ! "$topFiles" = "" ] ; then
+           mv *.top $basedir/PYTHIA8-output
+           mv *.log $basedir/log-files
+	fi
+
+        cd $basedir
+        rm -rf p8-analysis-$scriptNumber
+
+        if [ $scriptNumber -eq $nScripts ] ; then
+
+            (echo -n ' ' ) >> Timings/Timings-P8-analysis.txt
+            (echo -n Ending   P8 analysis ' ' ; date ) >> Timings/Timings-P8-analysis.txt
+
+        fi
+    fi
+
+###########################################################################
+###########################################################################
+#                                                                         #
+#   End of BigLoop over generation of events, reweighting and analysis    #
+#                                                                         #
+###########################################################################
+###########################################################################
+# Then we have to take care to shift the starting and ending seeds up so
+# they don't overlap the ones we already ran with, to avoid generating
+# identical events over again.
+    startSeed=$((startSeed+(nJobs*nScripts)))
+    endSeed=$((startSeed+nJobs-1))
+#
+done
+
+
